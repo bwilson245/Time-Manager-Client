@@ -19,10 +19,30 @@ repositories {
 }
 
 dependencies {
+	implementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+
+	implementation 'com.google.dagger:dagger:2.42'
+	annotationProcessor 'com.google.dagger:dagger-compiler:2.42'
+
+	implementation 'com.google.guava:guava:31.1-jre'
+
+	testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.10.0'
+
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	runtimeOnly group: 'software.amazon.awssdk', name: 'bom', version: '2.17.180', ext: 'pom'
+	implementation group: 'software.amazon.awssdk', name: 'dynamodb', version: '2.17.180'
+	implementation group: 'software.amazon.awssdk', name: 'lambda', version: '2.17.180'
+	implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
+	implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.12.209'
+	implementation group: 'software.amazon.awssdk', name: 'cognitoidentityprovider', version: '2.17.207'
+
 }
 
 tasks.named('test') {
