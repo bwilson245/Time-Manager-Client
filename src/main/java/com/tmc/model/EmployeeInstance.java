@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @DynamoDBDocument
 public class EmployeeInstance {
     private String id;
+    private String companyId;
     private String name;
     private Double straightTime;
     private Double overTime;

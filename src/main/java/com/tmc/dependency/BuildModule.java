@@ -1,14 +1,13 @@
 package com.tmc.dependency;
 
-import com.amazonaws.auth.*;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import dagger.Module;
 import dagger.Provides;
-import software.amazon.awssdk.auth.credentials.internal.CredentialSourceType;
 
 import javax.inject.Singleton;
 
@@ -23,6 +22,11 @@ public class BuildModule {
     @Provides
     @Singleton
     public AmazonDynamoDB provideAmazonDynamoDb() {
-        return AmazonDynamoDBClient.builder().build();
+        AmazonDynamoDB client = AmazonDynamoDBClient.builder()
+                .withCredentials(new ProfileCredentialsProvider("Personal"))
+                .withRegion(Regions.US_EAST_1)
+                .build();
+
+        return client;
     }
 }

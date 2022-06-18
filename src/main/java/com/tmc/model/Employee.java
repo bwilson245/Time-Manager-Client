@@ -1,13 +1,12 @@
 package com.tmc.model;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIndexHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @Builder
@@ -20,6 +19,9 @@ public class Employee {
     @DynamoDBHashKey(attributeName = "id")
     private String id;
 
+    @DynamoDBAttribute(attributeName = "companyId")
+    private String companyId;
+
     @DynamoDBAttribute(attributeName = "name")
     private String name;
 
@@ -29,4 +31,7 @@ public class Employee {
 
     @DynamoDBAttribute(attributeName = "password")
     private String password;
+
+    @DynamoDBAttribute(attributeName = "customerIds")
+    private List<String> customerIds;
 }

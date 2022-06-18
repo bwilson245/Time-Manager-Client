@@ -3,13 +3,14 @@ package com.tmc.dao;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.tmc.exception.EmployeeNotFoundException;
 import com.tmc.model.Employee;
+import com.tmc.model.request.CreateEmployeeRequest;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class EmployeeCachingDao {
@@ -46,16 +47,25 @@ public class EmployeeCachingDao {
         return cached;
     }
 
-    public void saveEmployee(Employee employee) {
+    public void createEmployee(CreateEmployeeRequest request) {
+        Employee employee = Employee.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .password(request.getPassword())
+                .companyId(request.getCompanyId())
+                .customerIds(new ArrayList<>())
+                .build();
+        String id = UUID.randomUUID().toString();
+        while (cache.getIfPresent(id) != null) {
+            id = UUID.randomUUID().toString();
+        }
+        employee.setId(id);
         cache.put(employee.getId(), employee);
         dao.saveEmployee(employee);
     }
 
     public void editEmployee(String id, String name, String email, String password) {
         Employee employee = cache.getUnchecked(id);
-        if (employee == null) {
-            throw new EmployeeNotFoundException("Could not find employee with id: " + id);
-        }
         employee.setName(Optional.ofNullable(name).orElse(employee.getName()));
         employee.setEmail(Optional.ofNullable(email).orElse(employee.getEmail()));
         employee.setPassword(Optional.ofNullable(password).orElse(employee.getPassword()));

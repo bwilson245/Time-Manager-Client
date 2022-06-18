@@ -6,6 +6,7 @@ import com.tmc.model.Customer;
 import com.tmc.model.Employee;
 import com.tmc.model.Location;
 import com.tmc.model.Timesheet;
+import com.tmc.model.request.CreateEmployeeRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,13 @@ import java.util.List;
 
 @RestController
 public class Controller {
+    /*
+     ********************** HEALTH CHECK ****************
+     */
+    @GetMapping("/")
+    public String healthCheck() {
+        return "Welcome to Time Manager!";
+    }
 
     /*
      ********************** TIMESHEET ****************
@@ -31,9 +39,9 @@ public class Controller {
     }
 
     @PostMapping("/timesheets")
-    public ResponseEntity<Timesheet> saveTimesheet(@RequestBody Timesheet timesheet) {
+    public ResponseEntity<Timesheet> createTimesheet(@RequestBody Timesheet timesheet) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideTimesheetActivity().saveTimesheet(timesheet), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideTimesheetActivity().createTimesheet(timesheet), HttpStatus.OK);
     }
 
     @DeleteMapping("/timesheets/{id}")
@@ -58,9 +66,9 @@ public class Controller {
     }
 
     @PostMapping("/employees")
-    public ResponseEntity<Employee> saveEmployee(@RequestBody Employee employee) {
+    public ResponseEntity<Employee> createEmployee(@RequestBody CreateEmployeeRequest request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideEmployeeActivity().saveEmployee(employee), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideEmployeeActivity().createEmployee(request), HttpStatus.OK);
     }
 
     @PutMapping("/employees/{id}")
@@ -96,9 +104,9 @@ public class Controller {
     }
 
     @PostMapping("/customers")
-    public ResponseEntity<Customer> saveCustomer(@RequestBody Customer customer) {
+    public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideCustomerActivity().saveCustomer(customer), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCustomerActivity().createCustomer(customer), HttpStatus.OK);
     }
 
     @PutMapping("/customers/{id}")

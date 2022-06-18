@@ -1,7 +1,6 @@
 package com.tmc.activity;
 
 import com.tmc.dao.TimesheetCachingDao;
-import com.tmc.model.Employee;
 import com.tmc.model.Timesheet;
 
 import javax.inject.Inject;
@@ -23,8 +22,8 @@ public class TimesheetActivity {
         return cachingDao.getTimesheets(ids);
     }
 
-    public Timesheet saveTimesheet(Timesheet timesheet) {
-        cachingDao.saveTimesheet(timesheet);
+    public Timesheet createTimesheet(Timesheet timesheet) {
+        cachingDao.createTimesheet(timesheet);
         return null;
     }
 

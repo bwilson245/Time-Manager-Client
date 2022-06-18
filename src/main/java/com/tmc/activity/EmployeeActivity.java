@@ -2,6 +2,7 @@ package com.tmc.activity;
 
 import com.tmc.dao.EmployeeCachingDao;
 import com.tmc.model.Employee;
+import com.tmc.model.request.CreateEmployeeRequest;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -22,8 +23,8 @@ public class EmployeeActivity {
         return cachingDao.getEmployees(ids);
     }
 
-    public Employee saveEmployee(Employee employee) {
-        cachingDao.saveEmployee(employee);
+    public Employee createEmployee(CreateEmployeeRequest request) {
+        cachingDao.createEmployee(request);
         return null;
     }
 

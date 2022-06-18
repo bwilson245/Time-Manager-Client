@@ -8,22 +8,27 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @DynamoDBTable(tableName = "Time-Manager")
-public class Customer {
+public class Company {
 
     @DynamoDBHashKey(attributeName = "id")
     private String id;
-
-    @DynamoDBAttribute(attributeName = "companyId")
-    private String companyId;
 
     @DynamoDBAttribute(attributeName = "name")
     private String name;
 
     @DynamoDBAttribute(attributeName = "location")
     private Location location;
+
+    @DynamoDBAttribute(attributeName = "customerIds")
+    private List<String> customerIds;
+
+    @DynamoDBAttribute(attributeName = "employeeIds")
+    private List<String> employeeIds;
 }
