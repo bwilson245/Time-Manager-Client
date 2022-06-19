@@ -3,8 +3,11 @@ package com.tmc.dao;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.tmc.model.Company;
 import com.tmc.model.Customer;
 import com.tmc.model.Location;
+import com.tmc.model.request.CreateCustomerRequest;
+import com.tmc.model.request.EditCustomerRequest;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -15,11 +18,13 @@ import java.util.concurrent.TimeUnit;
 
 public class CustomerCachingDao {
     private final DynamoDbDao dao;
+    private final CompanyCachingDao companyCachingDao;
     private final LoadingCache<String, Customer> cache;
 
     @Inject
-    public CustomerCachingDao(DynamoDbDao dao) {
+    public CustomerCachingDao(DynamoDbDao dao, CompanyCachingDao companyCachingDao) {
         this.dao = dao;
+        this.companyCachingDao = companyCachingDao;
         this.cache = CacheBuilder.newBuilder()
                 .expireAfterWrite(1, TimeUnit.DAYS)
                 .maximumSize(1000)
@@ -31,40 +36,74 @@ public class CustomerCachingDao {
     }
 
     public List<Customer> getCustomers(List<String> ids) {
-        List<String> notCached = new ArrayList<>();
         List<Customer> cached = new ArrayList<>();
-        for (String s : ids) {
-            if (cache.getIfPresent(s) == null) {
-                notCached.add(s);
+        List<String> notCached = new ArrayList<>();
+        for (String id : ids) {
+            Customer customer = cache.getIfPresent(id);
+            if (customer == null) {
+                notCached.add(id);
             } else {
-                cached.add(cache.getUnchecked(s));
+                cached.add(customer);
             }
         }
         cached.addAll(dao.getCustomers(notCached));
+        for (Customer customer : cached) {
+            cache.put(customer.getId(), customer);
+        }
         return cached;
     }
 
-    public void createCustomer(Customer customer) {
-        String id = UUID.randomUUID().toString();
-        while (cache.getIfPresent(id) != null) {
-            id = UUID.randomUUID().toString();
-        }
-        customer.setId(id);
+    public Customer createCustomer(CreateCustomerRequest request) {
+        Company company = companyCachingDao.getCompany(request.getCompanyId());
+
+        Location location = Location.builder()
+                .address1(request.getAddress1())
+                .address2(request.getAddress2())
+                .city(request.getCity())
+                .state(request.getState())
+                .zip(request.getZip())
+                .build();
+
+        Customer customer = Customer.builder()
+                .id(UUID.randomUUID().toString())
+                .companyId(company.getId())
+                .name(request.getName())
+                .location(location)
+                .timesheetIds(new ArrayList<>())
+                .isActive(true)
+                .build();
+
+        List<String> customerIds = new ArrayList<>(company.getCustomerIds());
+        customerIds.add(customer.getId());
+        company.setCustomerIds(customerIds);
+
         cache.put(customer.getId(), customer);
-        dao.saveCustomer(customer);
+        dao.saveCompany(company);
+        return dao.saveCustomer(customer);
     }
 
-    public void editCustomer(String id, String name, Location location) {
+    public Customer editCustomer(String id, EditCustomerRequest request) {
         Customer customer = cache.getUnchecked(id);
-        customer.setName(Optional.ofNullable(name).orElse(customer.getName()));
-        customer.setLocation(Optional.ofNullable(location).orElse(customer.getLocation()));
+
+        Location location = Location.builder()
+                .address1(Optional.ofNullable(request.getAddress1()).orElse(customer.getLocation().getAddress1()))
+                .address2(Optional.ofNullable(request.getAddress2()).orElse(customer.getLocation().getAddress2()))
+                .city(Optional.ofNullable(request.getCity()).orElse(customer.getLocation().getCity()))
+                .state(Optional.ofNullable(request.getState()).orElse(customer.getLocation().getState()))
+                .zip(Optional.ofNullable(request.getZip()).orElse(customer.getLocation().getZip()))
+                .build();
+
+        customer.setLocation(location);
+        customer.setName(Optional.ofNullable(request.getName()).orElse(customer.getName()));
 
         cache.put(customer.getId(), customer);
-        dao.saveCustomer(customer);
+        return dao.saveCustomer(customer);
     }
 
-    public void deleteCustomer(String id) {
-        dao.deleteCustomer(cache.getUnchecked(id));
-        cache.invalidate(id);
+    public Customer deactivateCustomer(String id) {
+        Customer customer = cache.getUnchecked(id);
+        customer.setIsActive(false);
+        return dao.saveCustomer(customer);
     }
+
 }

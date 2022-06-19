@@ -1,12 +1,15 @@
 package com.tmc.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.tmc.model.instance.EmployeeInstance;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
@@ -34,4 +37,10 @@ public class Employee {
 
     @DynamoDBAttribute(attributeName = "customerIds")
     private List<String> customerIds;
+
+    @DynamoDBAttribute(attributeName = "timesheetIds")
+    private List<String> timesheetIds;
+
+    @DynamoDBAttribute(attributeName = "isActive")
+    private Boolean isActive;
 }

@@ -9,9 +9,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateEmployeeRequest {
+public class CreateCustomerRequest {
     private String companyId;
     private String name;
-    private String email;
-    private String password;
+    private String address1;
+    private String address2;
+    private String city;
+    private String state;
+    private String zip;
 }

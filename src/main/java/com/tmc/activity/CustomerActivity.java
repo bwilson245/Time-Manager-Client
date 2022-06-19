@@ -3,6 +3,8 @@ package com.tmc.activity;
 import com.tmc.dao.CustomerCachingDao;
 import com.tmc.model.Customer;
 import com.tmc.model.Location;
+import com.tmc.model.request.CreateCustomerRequest;
+import com.tmc.model.request.EditCustomerRequest;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -23,18 +25,15 @@ public class CustomerActivity {
         return cachingDao.getCustomers(ids);
     }
 
-    public Customer createCustomer(Customer customer) {
-        cachingDao.createCustomer(customer);
-        return null;
+    public Customer createCustomer(CreateCustomerRequest request) {
+        return cachingDao.createCustomer(request);
     }
 
-    public Customer editCustomer(String id, String name, Location location) {
-        cachingDao.editCustomer(id, name, location);
-        return null;
+    public Customer editCustomer(String id, EditCustomerRequest request) {
+        return cachingDao.editCustomer(id, request);
     }
 
-    public Customer deleteCustomer(String id) {
-        cachingDao.deleteCustomer(id);
-        return null;
+    public Customer deactivateCustomer(String id) {
+        return cachingDao.deactivateCustomer(id);
     }
 }

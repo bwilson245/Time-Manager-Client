@@ -1,6 +1,7 @@
 package com.tmc.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.tmc.model.instance.EmployeeInstance;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,18 @@ public class Timesheet {
     @DynamoDBHashKey(attributeName = "id")
     private String id;
 
+    @DynamoDBIndexHashKey(attributeName = "companyId", globalSecondaryIndexName = "companyId-index")
+    @DynamoDBAttribute(attributeName = "companyId")
+    private String companyId;
+
+    @DynamoDBIndexHashKey(attributeName = "customerId", globalSecondaryIndexName = "customerId-index")
+    @DynamoDBAttribute(attributeName = "customerId")
+    private String customerId;
+
+    @DynamoDBAttribute(attributeName = "location")
+    private Location location;
+
+    @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.M)
     @DynamoDBAttribute(attributeName = "customer")
     private Customer customer;
 
@@ -39,7 +52,9 @@ public class Timesheet {
     @DynamoDBAttribute(attributeName = "description")
     private String description;
 
-    @DynamoDBTypeConvertedEnum
     @DynamoDBAttribute(attributeName = "type")
-    private TypeEnum type;
+    private String type;
+
+    @DynamoDBAttribute(attributeName = "validated")
+    private Boolean isValidated;
 }

@@ -1,5 +1,6 @@
 package com.tmc.dependency;
 
+import com.tmc.activity.CompanyActivity;
 import com.tmc.activity.CustomerActivity;
 import com.tmc.activity.EmployeeActivity;
 import com.tmc.activity.TimesheetActivity;
@@ -13,4 +14,5 @@ public interface ServiceComponent {
     TimesheetActivity provideTimesheetActivity();
     CustomerActivity provideCustomerActivity();
     EmployeeActivity provideEmployeeActivity();
+    CompanyActivity provideCompanyActivity();
 }

@@ -1,11 +1,11 @@
 package com.tmc.dependency;
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import dagger.Module;
 import dagger.Provides;
 
@@ -28,5 +28,11 @@ public class BuildModule {
                 .build();
 
         return client;
+    }
+
+    @Provides
+    @Singleton
+    public DynamoDB provideDynamoDb(AmazonDynamoDB client) {
+        return new DynamoDB(client);
     }
 }

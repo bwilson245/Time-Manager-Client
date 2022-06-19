@@ -3,6 +3,7 @@ package com.tmc.activity;
 import com.tmc.dao.EmployeeCachingDao;
 import com.tmc.model.Employee;
 import com.tmc.model.request.CreateEmployeeRequest;
+import com.tmc.model.request.EditEmployeeRequest;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -24,17 +25,14 @@ public class EmployeeActivity {
     }
 
     public Employee createEmployee(CreateEmployeeRequest request) {
-        cachingDao.createEmployee(request);
-        return null;
+        return cachingDao.createEmployee(request);
     }
 
-    public Employee editEmployee(String id, String name, String email, String password) {
-        cachingDao.editEmployee(id, name, email, password);
-        return null;
+    public Employee editEmployee(String id, EditEmployeeRequest request) {
+        return cachingDao.editEmployee(id, request);
     }
 
-    public Employee deleteEmployee(String id) {
-        cachingDao.deleteEmployee(id);
-        return null;
+    public Employee deactivateEmployee(String id) {
+        return cachingDao.deactivateEmployee(id);
     }
 }

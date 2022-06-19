@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateEmployeeRequest {
-    private String companyId;
+public class EditEmployeeRequest {
     private String name;
     private String email;
     private String password;
