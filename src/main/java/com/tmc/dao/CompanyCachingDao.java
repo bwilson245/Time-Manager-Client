@@ -40,10 +40,6 @@ public class CompanyCachingDao {
                         .state(request.getState())
                         .zip(request.getZip())
                         .build())
-                .employeeIds(new ArrayList<>())
-                .customerIds(new ArrayList<>())
-                .timesheetIds(new ArrayList<>())
-                .isActive(true)
                 .build();
 
         cache.put(company.getId(), company);

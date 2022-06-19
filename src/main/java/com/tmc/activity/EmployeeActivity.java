@@ -24,6 +24,10 @@ public class EmployeeActivity {
         return cachingDao.getEmployees(ids);
     }
 
+    public List<Employee> getEmployeesForCompany(String id, String name, String email, Boolean isActive) {
+        return cachingDao.getEmployeesForCompany(id, name, email, isActive);
+    }
+
     public Employee createEmployee(CreateEmployeeRequest request) {
         return cachingDao.createEmployee(request);
     }

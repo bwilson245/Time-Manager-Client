@@ -2,6 +2,7 @@ package com.tmc.activity;
 
 import com.tmc.dao.TimesheetCachingDao;
 import com.tmc.model.Timesheet;
+import com.tmc.model.TypeEnum;
 import com.tmc.model.request.CreateTimesheetRequest;
 import com.tmc.model.request.EditTimesheetRequest;
 
@@ -20,19 +21,9 @@ public class TimesheetActivity {
         return cachingDao.getTimesheet(id);
     }
 
-    public List<Timesheet> getTimesheetsForCompany(String id, String type, String department, String orderNum,
-                                                   Long before, Long after, Boolean complete, Boolean validated) {
-        return cachingDao.getTimesheetsForCompany(id, type, department, orderNum, before, after, complete, validated);
-    }
-
-    public List<Timesheet> getTimesheetsForCustomer(String id, String type, String department, String orderNum,
-                                                   Long before, Long after, Boolean complete, Boolean validated) {
-        return cachingDao.getTimesheetsForCustomer(id, type, department, orderNum, before, after, complete, validated);
-    }
-
-    public List<Timesheet> getTimesheetsForEmployee(String id, String type, String department, String orderNum,
-                                                    Long before, Long after, Boolean complete, Boolean validated) {
-        return cachingDao.getTimesheetsForEmployee(id, type, department, orderNum, before, after, complete, validated);
+    public List<Timesheet> getTimesheetsSearch(TypeEnum type, String id, String workType, String department, String orderNum,
+                                               Long before, Long after, Boolean complete, Boolean validated) {
+        return cachingDao.getTimesheetsSearch(type, id, workType, department, orderNum, before, after, complete, validated);
     }
 
     public Timesheet createTimesheet(CreateTimesheetRequest request) {

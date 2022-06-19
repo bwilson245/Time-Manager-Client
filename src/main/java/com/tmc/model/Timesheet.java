@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -19,11 +20,11 @@ public class Timesheet {
     @DynamoDBHashKey(attributeName = "id")
     private String id;
 
-    @DynamoDBIndexHashKey(attributeName = "companyId", globalSecondaryIndexName = "companyId-index")
+    @DynamoDBIndexHashKey(attributeName = "companyId", globalSecondaryIndexName = "companyId-type-index")
     @DynamoDBAttribute(attributeName = "companyId")
     private String companyId;
 
-    @DynamoDBIndexHashKey(attributeName = "customerId", globalSecondaryIndexName = "customerId-index")
+    @DynamoDBIndexHashKey(attributeName = "customerId", globalSecondaryIndexName = "customerId-type-index")
     @DynamoDBAttribute(attributeName = "customerId")
     private String customerId;
 
@@ -40,6 +41,10 @@ public class Timesheet {
     @DynamoDBAttribute(attributeName = "employeeInstances")
     private List<EmployeeInstance> employeeInstances;
 
+    @Builder.Default
+    @DynamoDBAttribute(attributeName = "employeeIds")
+    private List<String> employeeIds = new ArrayList<>();
+
     @DynamoDBAttribute(attributeName = "isComplete")
     private Boolean isComplete;
 
@@ -52,9 +57,16 @@ public class Timesheet {
     @DynamoDBAttribute(attributeName = "description")
     private String description;
 
-    @DynamoDBAttribute(attributeName = "type")
-    private String type;
+    @DynamoDBAttribute(attributeName = "workType")
+    private String workType;
 
+    @Builder.Default
     @DynamoDBAttribute(attributeName = "validated")
-    private Boolean isValidated;
+    private Boolean isValidated = false;
+
+    @Builder.Default
+    @DynamoDBTypeConvertedEnum
+    @DynamoDBIndexRangeKey(attributeName = "type", globalSecondaryIndexNames = {"companyId-type-index", "customerId-type-index"})
+    @DynamoDBAttribute(attributeName = "type")
+    private TypeEnum type = TypeEnum.TIMESHEET;
 }

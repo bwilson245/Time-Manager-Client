@@ -1,9 +1,6 @@
 package com.tmc.model;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.tmc.model.instance.CustomerInstance;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,6 +21,7 @@ public class Customer {
     @DynamoDBHashKey(attributeName = "id")
     private String id;
 
+    @DynamoDBIndexHashKey(attributeName = "companyId", globalSecondaryIndexName = "companyId-type-index")
     @DynamoDBAttribute(attributeName = "companyId")
     private String companyId;
 
@@ -33,9 +31,17 @@ public class Customer {
     @DynamoDBAttribute(attributeName = "location")
     private Location location;
 
+    @Builder.Default
     @DynamoDBAttribute(attributeName = "timesheetIds")
-    private List<String> timesheetIds;
+    private List<String> timesheetIds = new ArrayList<>();
 
+    @Builder.Default
     @DynamoDBAttribute(attributeName = "isActive")
-    private Boolean isActive;
+    private Boolean isActive = true;
+
+    @Builder.Default
+    @DynamoDBTypeConvertedEnum
+    @DynamoDBIndexRangeKey(attributeName = "type", globalSecondaryIndexNames = {"companyId-type-index"})
+    @DynamoDBAttribute(attributeName = "type")
+    private TypeEnum type = TypeEnum.CUSTOMER;
 }

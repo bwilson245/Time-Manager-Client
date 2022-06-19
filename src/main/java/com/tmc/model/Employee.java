@@ -1,7 +1,6 @@
 package com.tmc.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.tmc.model.instance.EmployeeInstance;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Data
 @Builder
@@ -22,6 +20,7 @@ public class Employee {
     @DynamoDBHashKey(attributeName = "id")
     private String id;
 
+    @DynamoDBIndexHashKey(attributeName = "companyId", globalSecondaryIndexName = "companyId-type-index")
     @DynamoDBAttribute(attributeName = "companyId")
     private String companyId;
 
@@ -35,12 +34,21 @@ public class Employee {
     @DynamoDBAttribute(attributeName = "password")
     private String password;
 
+    @Builder.Default
     @DynamoDBAttribute(attributeName = "customerIds")
-    private List<String> customerIds;
+    private List<String> customerIds = new ArrayList<>();
 
+    @Builder.Default
     @DynamoDBAttribute(attributeName = "timesheetIds")
-    private List<String> timesheetIds;
+    private List<String> timesheetIds = new ArrayList<>();
 
+    @Builder.Default
     @DynamoDBAttribute(attributeName = "isActive")
-    private Boolean isActive;
+    private Boolean isActive = true;
+
+    @Builder.Default
+    @DynamoDBTypeConvertedEnum
+    @DynamoDBIndexRangeKey(attributeName = "type", globalSecondaryIndexNames = {"companyId-type-index"})
+    @DynamoDBAttribute(attributeName = "type")
+    private TypeEnum type = TypeEnum.EMPLOYEE;
 }

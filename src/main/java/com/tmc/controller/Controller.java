@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.Field;
-import java.util.List;
+import java.util.*;
 
 @RestController
 public class Controller {
@@ -30,46 +30,19 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideTimesheetActivity().getTimesheet(id), HttpStatus.OK);
     }
 
-    @GetMapping("/timesheets/company/{id}")
-    public ResponseEntity<List<Timesheet>> getTimesheetsForCompany(@RequestParam String id,
-                                                         @RequestParam (required = false) String type,
-                                                         @RequestParam (required = false) Long before,
-                                                         @RequestParam (required = false) Long after,
-                                                         @RequestParam (required = false) String department,
-                                                         @RequestParam (required = false) Boolean complete,
-                                                         @RequestParam (required = false) Boolean validated,
-                                                         @RequestParam (required = false) String orderNum) {
+    @GetMapping("/timesheets/search/{id}")
+    public ResponseEntity<List<Timesheet>> getTimesheetsSearch(@PathVariable String id,
+                                                               @RequestParam (required = false) TypeEnum type,
+                                                               @RequestParam (required = false) String workType,
+                                                               @RequestParam (required = false) Long before,
+                                                               @RequestParam (required = false) Long after,
+                                                               @RequestParam (required = false) String department,
+                                                               @RequestParam (required = false) Boolean complete,
+                                                               @RequestParam (required = false) Boolean validated,
+                                                               @RequestParam (required = false) String orderNum) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideTimesheetActivity().getTimesheetsForCompany(id, type, department,
+        return new ResponseEntity<>(dagger.provideTimesheetActivity().getTimesheetsSearch(type, id, workType, department,
                                                         orderNum, before, after, complete, validated), HttpStatus.OK);
-    }
-
-    @GetMapping("/timesheets/customer/{id}")
-    public ResponseEntity<List<Timesheet>> getTimesheetsForCustomer(@RequestParam String id,
-                                                                   @RequestParam (required = false) String type,
-                                                                   @RequestParam (required = false) Long before,
-                                                                   @RequestParam (required = false) Long after,
-                                                                   @RequestParam (required = false) String department,
-                                                                   @RequestParam (required = false) Boolean complete,
-                                                                   @RequestParam (required = false) Boolean validated,
-                                                                   @RequestParam (required = false) String orderNum) {
-        ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideTimesheetActivity().getTimesheetsForCustomer(id, type, department,
-                orderNum, before, after, complete, validated), HttpStatus.OK);
-    }
-
-    @GetMapping("/timesheets/employee/{id}")
-    public ResponseEntity<List<Timesheet>> getTimesheetsForEmployee(@RequestParam String id,
-                                                                    @RequestParam (required = false) String type,
-                                                                    @RequestParam (required = false) Long before,
-                                                                    @RequestParam (required = false) Long after,
-                                                                    @RequestParam (required = false) String department,
-                                                                    @RequestParam (required = false) Boolean complete,
-                                                                    @RequestParam (required = false) Boolean validated,
-                                                                    @RequestParam (required = false) String orderNum) {
-        ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideTimesheetActivity().getTimesheetsForEmployee(id, type, department,
-                orderNum, before, after, complete, validated), HttpStatus.OK);
     }
 
     @PostMapping("/timesheets")
@@ -99,6 +72,15 @@ public class Controller {
     public ResponseEntity<List<Employee>> getEmployees(@RequestBody List<String> ids) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideEmployeeActivity().getEmployees(ids), HttpStatus.OK);
+    }
+
+    @GetMapping("/employees/company/{id}")
+    public ResponseEntity<List<Employee>> getEmployeesForCompany(@PathVariable String id,
+                                                                 @RequestParam (required = false) String name,
+                                                                 @RequestParam (required = false) String email,
+                                                                 @RequestParam (required = false) Boolean isActive) {
+        ServiceComponent dagger = DaggerServiceComponent.create();
+        return new ResponseEntity<>(dagger.provideEmployeeActivity().getEmployeesForCompany(id, name, email, isActive), HttpStatus.OK);
     }
 
     @PostMapping("/employees")

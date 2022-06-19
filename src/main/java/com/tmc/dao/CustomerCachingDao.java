@@ -69,8 +69,6 @@ public class CustomerCachingDao {
                 .companyId(company.getId())
                 .name(request.getName())
                 .location(location)
-                .timesheetIds(new ArrayList<>())
-                .isActive(true)
                 .build();
 
         List<String> customerIds = new ArrayList<>(company.getCustomerIds());

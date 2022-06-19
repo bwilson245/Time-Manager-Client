@@ -23,5 +23,6 @@ public class EditTimesheetRequest {
     private String workOrderNumber;
     private String department;
     private String description;
-    private String type;
+    private String workType;
+    private Boolean isValidated;
 }
