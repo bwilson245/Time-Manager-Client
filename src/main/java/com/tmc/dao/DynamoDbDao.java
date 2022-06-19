@@ -28,6 +28,25 @@ public class DynamoDbDao {
         return mapper.load(Timesheet.class, id);
     }
 
+    public List<Timesheet> getTimesheets(List<String> ids) {
+        List<Timesheet> timesheets = new ArrayList<>();
+        for (String s : ids) {
+            Timesheet timesheet = Timesheet.builder().id(s).build();
+            timesheets.add(timesheet);
+        }
+
+        Map<String, List<Object>> loadResult = mapper.batchLoad(timesheets);
+        timesheets.clear();
+        for (Map.Entry<String, List<Object>> entry : loadResult.entrySet()) {
+            for (Object o : entry.getValue()) {
+                if (o instanceof Timesheet) {
+                    timesheets.add((Timesheet) o);
+                }
+            }
+        }
+        return timesheets;
+    }
+
     public List<Timesheet> getTimesheets(String table, Object obj, String workType, String department, String orderNum,
                                          Long before, Long after, Boolean complete, Boolean validated) {
 
@@ -130,10 +149,13 @@ public class DynamoDbDao {
         DynamoDBQueryExpression<Timesheet> expression = new DynamoDBQueryExpression<Timesheet>()
                 .withIndexName(table)
                 .withKeyConditionExpression(keyExpression)
-                .withFilterExpression(filterExpression)
                 .withExpressionAttributeNames(nameMap)
                 .withExpressionAttributeValues(valueMap)
                 .withConsistentRead(false);
+
+        if (filterExpression.length() > 0) {
+            expression.withFilterExpression(filterExpression);
+        }
 
         return mapper.query(Timesheet.class, expression);
     }

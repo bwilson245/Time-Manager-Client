@@ -21,6 +21,8 @@ public class TimesheetActivity {
         return cachingDao.getTimesheet(id);
     }
 
+    public List<Timesheet> getTimesheets(List<String> ids) { return cachingDao.getTimesheets(ids); }
+
     public List<Timesheet> getTimesheetsSearch(TypeEnum type, String id, String workType, String department, String orderNum,
                                                Long before, Long after, Boolean complete, Boolean validated) {
         return cachingDao.getTimesheetsSearch(type, id, workType, department, orderNum, before, after, complete, validated);

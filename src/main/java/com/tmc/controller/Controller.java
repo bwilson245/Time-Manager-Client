@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 @RestController
@@ -28,6 +27,12 @@ public class Controller {
     public ResponseEntity<Timesheet> getTimesheet(@PathVariable String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideTimesheetActivity().getTimesheet(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/timesheets")
+    public ResponseEntity<List<Timesheet>> getTimesheets(@RequestBody List<String> ids) {
+        ServiceComponent dagger = DaggerServiceComponent.create();
+        return new ResponseEntity<>(dagger.provideTimesheetActivity().getTimesheets(ids), HttpStatus.OK);
     }
 
     @GetMapping("/timesheets/search/{id}")
@@ -52,7 +57,7 @@ public class Controller {
     }
 
     @PutMapping("/timesheets/{id}")
-    public ResponseEntity<Timesheet> editEmployee(@PathVariable String id,
+    public ResponseEntity<Timesheet> editTimesheet(@PathVariable String id,
                                                  @RequestBody EditTimesheetRequest request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideTimesheetActivity()
@@ -97,14 +102,6 @@ public class Controller {
                 .editEmployee(id, request), HttpStatus.OK);
     }
 
-
-    @PutMapping("/employees/deactivate/{id}")
-    public ResponseEntity<Employee> deactivateEmployee(@PathVariable String id) {
-        ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideEmployeeActivity()
-                .deactivateEmployee(id), HttpStatus.OK);
-    }
-
     /*
     ********************** CUSTOMER ****************
      */
@@ -134,13 +131,6 @@ public class Controller {
                 .editCustomer(id, request), HttpStatus.OK);
     }
 
-    @PutMapping("/customers/deactivate/{id}")
-    public ResponseEntity<Customer> deactivateCustomer(@PathVariable String id) {
-        ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideCustomerActivity()
-                .deactivateCustomer(id), HttpStatus.OK);
-    }
-
     /*
      ********************** COMPANY ****************
      */
@@ -162,12 +152,5 @@ public class Controller {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideCompanyActivity()
                 .editCompany(id, request), HttpStatus.OK);
-    }
-
-    @PutMapping("/company/deactivate/{id}")
-    public ResponseEntity<Company> deactivateCompany(@PathVariable String id) {
-        ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideCompanyActivity()
-                .deactivateCompany(id), HttpStatus.OK);
     }
 }

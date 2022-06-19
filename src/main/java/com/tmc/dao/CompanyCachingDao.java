@@ -32,12 +32,12 @@ public class CompanyCachingDao {
     public Company createCompany(CreateCompanyRequest request) {
         Company company = Company.builder()
                 .id(UUID.randomUUID().toString())
-                .name(request.getName())
+                .name(request.getName().toUpperCase())
                 .location(Location.builder()
-                        .address1(request.getAddress1())
-                        .address2(request.getAddress2())
-                        .city(request.getCity())
-                        .state(request.getState())
+                        .address1(request.getAddress1().toUpperCase())
+                        .address2(request.getAddress2().toUpperCase())
+                        .city(request.getCity().toUpperCase())
+                        .state(request.getState().toUpperCase())
                         .zip(request.getZip())
                         .build())
                 .build();
@@ -50,13 +50,13 @@ public class CompanyCachingDao {
         Company company = cache.getUnchecked(id);
         Location location = company.getLocation();
 
-        location.setAddress1(Optional.ofNullable(request.getAddress1()).orElse(company.getLocation().getAddress1()));
-        location.setAddress2(Optional.ofNullable(request.getAddress2()).orElse(company.getLocation().getAddress2()));
-        location.setCity(Optional.ofNullable(request.getCity()).orElse(company.getLocation().getCity()));
-        location.setState(Optional.ofNullable(request.getState()).orElse(company.getLocation().getState()));
+        location.setAddress1(Optional.ofNullable(request.getAddress1()).orElse(company.getLocation().getAddress1()).toUpperCase());
+        location.setAddress2(Optional.ofNullable(request.getAddress2()).orElse(company.getLocation().getAddress2()).toUpperCase());
+        location.setCity(Optional.ofNullable(request.getCity()).orElse(company.getLocation().getCity()).toUpperCase());
+        location.setState(Optional.ofNullable(request.getState()).orElse(company.getLocation().getState()).toUpperCase());
         location.setZip(Optional.ofNullable(request.getZip()).orElse(company.getLocation().getZip()));
 
-        company.setName(Optional.ofNullable(request.getName()).orElse(company.getName()));
+        company.setName(Optional.ofNullable(request.getName()).orElse(company.getName()).toUpperCase());
         company.setLocation(location);
 
         cache.put(company.getId(), company);

@@ -9,6 +9,7 @@ import com.tmc.model.request.CreateTimesheetRequest;
 import com.tmc.model.request.EditTimesheetRequest;
 
 import javax.inject.Inject;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -41,10 +42,31 @@ public class TimesheetCachingDao {
         return cache.getUnchecked(id);
     }
 
+    public List<Timesheet> getTimesheets(List<String> ids) {
+        List<Timesheet> cached = new ArrayList<>();
+        List<String> notCached = new ArrayList<>();
+        for (String id : ids) {
+            Timesheet timesheet = cache.getIfPresent(id);
+            if (timesheet == null) {
+                notCached.add(id);
+            } else {
+                cached.add(timesheet);
+            }
+        }
+        cached.addAll(dao.getTimesheets(notCached));
+        for (Timesheet timesheet : cached) {
+            cache.put(timesheet.getId(), timesheet);
+        }
+        return cached;
+    }
+
     public List<Timesheet> getTimesheetsSearch(TypeEnum type, String id, String workType, String department, String orderNum,
                                                Long before, Long after, Boolean complete, Boolean validated) {
         Object obj;
         String table;
+        if (type == null) {
+            type = TypeEnum.COMPANY;
+        }
         switch (type) {
             case CUSTOMER:
                 obj = customerCachingDao.getCustomer(id);
@@ -70,14 +92,26 @@ public class TimesheetCachingDao {
      * @return returns the newly created Timesheet with isValidated = false.
      */
     public Timesheet createTimesheet(CreateTimesheetRequest request) {
+        Location location = Location.builder()
+                .address1(request.getLocation().getAddress1().toUpperCase())
+                .address2(request.getLocation().getAddress2().toUpperCase())
+                .city(request.getLocation().getCity().toUpperCase())
+                .state(request.getLocation().getState().toUpperCase())
+                .zip(request.getLocation().getZip())
+                .build();
 
         Company company = companyCachingDao.getCompany(request.getCompanyId());
+
+        for (EmployeeInstance instance : request.getEmployeeInstances()) {
+            instance.setCompanyId(company.getId());
+            instance.setName(instance.getName().toUpperCase());
+        }
 
         Timesheet timesheet = Timesheet.builder()
                 .id(UUID.randomUUID().toString())
                 .companyId(request.getCompanyId())
                 .customerId("")
-                .location(request.getLocation())
+                .location(location)
                 .customer(request.getCustomer())
                 .date(request.getDate())
                 .employeeInstances(request.getEmployeeInstances())
@@ -109,12 +143,49 @@ public class TimesheetCachingDao {
     public Timesheet editTimesheet(String id, EditTimesheetRequest request) {
         Timesheet timesheet = cache.getUnchecked(id);
 
+        Location location = Location.builder()
+                .address1(Optional.ofNullable(request.getLocation().getAddress1())
+                        .orElse(Optional.ofNullable(timesheet.getLocation().getAddress1())
+                                .orElse("")).toUpperCase())
+                .address2(Optional.ofNullable(request.getLocation().getAddress2())
+                        .orElse(Optional.ofNullable(timesheet.getLocation().getAddress2())
+                                .orElse("")).toUpperCase())
+                .city(Optional.ofNullable(request.getLocation().getCity())
+                        .orElse(Optional.ofNullable(timesheet.getLocation().getCity())
+                                .orElse("")).toUpperCase())
+                .state(Optional.ofNullable(request.getLocation().getState())
+                        .orElse(Optional.ofNullable(timesheet.getLocation().getState())
+                                .orElse("")).toUpperCase())
+                .zip(Optional.ofNullable(request.getLocation().getZip())
+                        .orElse(Optional.ofNullable(timesheet.getLocation().getZip())
+                                .orElse("")))
+                .build();
+
         Set<String> originalEmployeeInstanceIds = new HashSet<>();
         for (EmployeeInstance instance : timesheet.getEmployeeInstances()) {
-            originalEmployeeInstanceIds.add(instance.getId());
+            if (instance.getId() != null) {
+                originalEmployeeInstanceIds.add(instance.getId());
+            }
         }
 
-        timesheet.setLocation(Optional.ofNullable(request.getLocation()).orElse(timesheet.getLocation()));
+        Customer customer = Optional.ofNullable(request.getCustomer()).orElse(timesheet.getCustomer());
+        customer.getLocation().setAddress1(Optional.ofNullable(request.getCustomer().getLocation().getAddress1())
+                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getAddress1())
+                        .orElse("")).toUpperCase());
+        customer.getLocation().setAddress2(Optional.ofNullable(request.getCustomer().getLocation().getAddress2())
+                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getAddress2())
+                        .orElse("")).toUpperCase());
+        customer.getLocation().setCity(Optional.ofNullable(request.getCustomer().getLocation().getCity())
+                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getCity())
+                        .orElse("")).toUpperCase());
+        customer.getLocation().setState(Optional.ofNullable(request.getCustomer().getLocation().getState())
+                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getState())
+                        .orElse("")).toUpperCase());
+        customer.getLocation().setZip(Optional.ofNullable(request.getCustomer().getLocation().getZip())
+                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getZip())
+                        .orElse("")).toUpperCase());
+
+        timesheet.setLocation(location);
         timesheet.setCustomer(Optional.ofNullable(request.getCustomer()).orElse(timesheet.getCustomer()));
         timesheet.setDate(Optional.ofNullable(request.getDate()).orElse(timesheet.getDate()));
         timesheet.setEmployeeInstances(Optional.ofNullable(request.getEmployeeInstances()).orElse(timesheet.getEmployeeInstances()));
@@ -157,7 +228,7 @@ public class TimesheetCachingDao {
         }
         timesheet.setEmployeeIds(new ArrayList<>(employeeIds));
 
-        Customer customer = customerCachingDao.getCustomer(timesheet.getCustomer().getId());
+        customer = customerCachingDao.getCustomer(timesheet.getCustomer().getId());
         Set<String> timesheetIds = new HashSet<>(customer.getTimesheetIds());
         timesheetIds.add(timesheet.getId());
         customer.setTimesheetIds(new ArrayList<>(timesheetIds));

@@ -57,17 +57,17 @@ public class CustomerCachingDao {
         Company company = companyCachingDao.getCompany(request.getCompanyId());
 
         Location location = Location.builder()
-                .address1(request.getAddress1())
-                .address2(request.getAddress2())
-                .city(request.getCity())
-                .state(request.getState())
+                .address1(request.getAddress1().toUpperCase())
+                .address2(request.getAddress2().toUpperCase())
+                .city(request.getCity().toUpperCase())
+                .state(request.getState().toUpperCase())
                 .zip(request.getZip())
                 .build();
 
         Customer customer = Customer.builder()
                 .id(UUID.randomUUID().toString())
                 .companyId(company.getId())
-                .name(request.getName())
+                .name(request.getName().toUpperCase())
                 .location(location)
                 .build();
 
@@ -84,15 +84,15 @@ public class CustomerCachingDao {
         Customer customer = cache.getUnchecked(id);
 
         Location location = Location.builder()
-                .address1(Optional.ofNullable(request.getAddress1()).orElse(customer.getLocation().getAddress1()))
-                .address2(Optional.ofNullable(request.getAddress2()).orElse(customer.getLocation().getAddress2()))
-                .city(Optional.ofNullable(request.getCity()).orElse(customer.getLocation().getCity()))
-                .state(Optional.ofNullable(request.getState()).orElse(customer.getLocation().getState()))
+                .address1(Optional.ofNullable(request.getAddress1()).orElse(customer.getLocation().getAddress1()).toUpperCase())
+                .address2(Optional.ofNullable(request.getAddress2()).orElse(customer.getLocation().getAddress2()).toUpperCase())
+                .city(Optional.ofNullable(request.getCity()).orElse(customer.getLocation().getCity()).toUpperCase())
+                .state(Optional.ofNullable(request.getState()).orElse(customer.getLocation().getState()).toUpperCase())
                 .zip(Optional.ofNullable(request.getZip()).orElse(customer.getLocation().getZip()))
                 .build();
 
         customer.setLocation(location);
-        customer.setName(Optional.ofNullable(request.getName()).orElse(customer.getName()));
+        customer.setName(Optional.ofNullable(request.getName()).orElse(customer.getName()).toUpperCase());
 
         cache.put(customer.getId(), customer);
         return dao.saveCustomer(customer);
