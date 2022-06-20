@@ -34,12 +34,12 @@ public class ServiceManager {
         return timesheetService.search(type, id, workType, department, orderNum, before, after, isComplete, isValidated);
     }
 
-    public Timesheet createTimesheet(CreateTimesheetRequest request) {
+    public Timesheet createTimesheet(Timesheet request) {
         return timesheetService.create(request);
     }
 
-    public Timesheet editTimesheet(String id, EditTimesheetRequest request) {
-        return timesheetService.edit(id, request);
+    public Timesheet editTimesheet(Timesheet request) {
+        return timesheetService.edit(request);
     }
 
     //*****************************************************************************************************************
@@ -58,12 +58,12 @@ public class ServiceManager {
         return employeeService.search(type, id, name, email, isActive);
     }
 
-    public Employee createEmployee(CreateEmployeeRequest request) {
+    public Employee createEmployee(Employee request) {
         return employeeService.create(request);
     }
 
-    public Employee editEmployee(String id, EditEmployeeRequest request) {
-        return employeeService.edit(id, request);
+    public Employee editEmployee(Employee request) {
+        return employeeService.edit(request);
     }
 
     //*****************************************************************************************************************
@@ -82,12 +82,12 @@ public class ServiceManager {
         return null;
     }
 
-    public Customer createCustomer(CreateCustomerRequest request) {
+    public Customer createCustomer(Customer request) {
         return customerService.create(request);
     }
 
-    public Customer editCustomer(String id, EditCustomerRequest request) {
-        return customerService.edit(id, request);
+    public Customer editCustomer(Customer request) {
+        return customerService.edit(request);
     }
 
     //*****************************************************************************************************************
@@ -98,11 +98,11 @@ public class ServiceManager {
         return companyService.getCacheManager().getCompanyCache().get(id);
     }
 
-    public Company createCompany(CreateCompanyRequest request) {
+    public Company createCompany(Company request) {
         return companyService.create(request);
     }
 
-    public Company editCompany(String id, EditCompanyRequest request) {
-        return companyService.edit(id, request);
+    public Company editCompany(Company request) {
+        return companyService.edit(request);
     }
 }

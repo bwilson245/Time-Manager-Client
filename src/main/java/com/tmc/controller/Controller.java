@@ -55,16 +55,15 @@ public class Controller {
     }
 
     @PostMapping("/timesheet")
-    public ResponseEntity<Timesheet> createTimesheet(@RequestBody CreateTimesheetRequest request) {
+    public ResponseEntity<Timesheet> createTimesheet(@RequestBody Timesheet request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideServiceManager().createTimesheet(request), HttpStatus.OK);
     }
 
     @PutMapping("/timesheet/{id}")
-    public ResponseEntity<Timesheet> editTimesheet(@PathVariable String id,
-                                                 @RequestBody EditTimesheetRequest request) {
+    public ResponseEntity<Timesheet> editTimesheet(@RequestBody Timesheet request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().editTimesheet(id, request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideServiceManager().editTimesheet(request), HttpStatus.OK);
     }
 
     /*
@@ -93,16 +92,15 @@ public class Controller {
     }
 
     @PostMapping("/employee")
-    public ResponseEntity<Employee> createEmployee(@RequestBody CreateEmployeeRequest request) {
+    public ResponseEntity<Employee> createEmployee(@RequestBody Employee request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideServiceManager().createEmployee(request), HttpStatus.OK);
     }
 
     @PutMapping("/employee/{id}")
-    public ResponseEntity<Employee> editEmployee(@PathVariable String id,
-                                                 @RequestBody EditEmployeeRequest request) {
+    public ResponseEntity<Employee> editEmployee(@RequestBody Employee request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().editEmployee(id, request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideServiceManager().editEmployee(request), HttpStatus.OK);
     }
 
     /*
@@ -121,16 +119,15 @@ public class Controller {
     }
 
     @PostMapping("/customer")
-    public ResponseEntity<Customer> createCustomer(@RequestBody CreateCustomerRequest request) {
+    public ResponseEntity<Customer> createCustomer(@RequestBody Customer request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideServiceManager().createCustomer(request), HttpStatus.OK);
     }
 
     @PutMapping("/customer/{id}")
-    public ResponseEntity<Customer> editCustomer(@PathVariable String id,
-                                                 @RequestBody EditCustomerRequest request) {
+    public ResponseEntity<Customer> editCustomer(@RequestBody Customer request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().editCustomer(id, request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideServiceManager().editCustomer(request), HttpStatus.OK);
     }
 
     /*
@@ -143,15 +140,14 @@ public class Controller {
     }
 
     @PostMapping("/company")
-    public ResponseEntity<Company> createCompany(@RequestBody CreateCompanyRequest request) {
+    public ResponseEntity<Company> createCompany(@RequestBody Company request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideServiceManager().createCompany(request), HttpStatus.OK);
     }
 
     @PutMapping("/company/{id}")
-    public ResponseEntity<Company> editCompany(@PathVariable String id,
-                                                 @RequestBody EditCompanyRequest request) {
+    public ResponseEntity<Company> editCompany(@RequestBody Company request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().editCompany(id, request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideServiceManager().editCompany(request), HttpStatus.OK);
     }
 }

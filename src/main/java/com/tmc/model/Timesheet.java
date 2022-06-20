@@ -74,43 +74,35 @@ public class Timesheet {
     @DynamoDBAttribute(attributeName = "type")
     private TypeEnum type = TypeEnum.TIMESHEET;
 
-    public Timesheet(CreateTimesheetRequest request) {
-        //****** Retrieve the Company object *******//
-        Location location = Location.builder()
-                .address1(Optional.ofNullable(request.getLocation().getAddress1()).orElse(""))
-                .address2(Optional.ofNullable(request.getLocation().getAddress2()).orElse(""))
-                .city(Optional.ofNullable(request.getLocation().getCity()).orElse(""))
-                .state(Optional.ofNullable(request.getLocation().getState()).orElse(""))
-                .zip(Optional.ofNullable(request.getLocation().getZip()).orElse(""))
-                .build();
+    public Timesheet(Timesheet request) {
+        //****** Build Location object *******//
+        this.location = new Location(request.getLocation());
+        this.customer = new Customer(request.getCustomer());
         this.id = UUID.randomUUID().toString();
         this.companyId = request.getCompanyId();
-        this.customer = Optional.ofNullable(request.getCustomer()).orElse(new Customer());
-        this.customerId = Optional.ofNullable(request.getCustomer().getId()).orElse("");
-        this.location = location;
+        this.customerId = Optional.ofNullable(customer.getId()).orElse("");
         this.date = Optional.ofNullable(request.getDate()).orElse(new Date().getTime());
         this.employeeInstances = Optional.ofNullable(request.getEmployeeInstances()).orElse(new ArrayList<>());
+        this.employeeIds = Optional.of(request.getEmployeeIds()).orElse(new ArrayList<>());
         this.isComplete = Optional.ofNullable(request.getIsComplete()).orElse(false);
         this.workOrderNumber = Optional.ofNullable(request.getWorkOrderNumber()).orElse("");
         this.department = Optional.ofNullable(request.getDepartment()).orElse("");
         this.description = Optional.ofNullable(request.getDescription()).orElse("");
         this.workType = Optional.ofNullable(request.getWorkType()).orElse("");
+        this.isValidated = Optional.ofNullable(request.getIsValidated()).orElse(false);
         this.type = TypeEnum.TIMESHEET;
     }
 
-    public Timesheet(EditTimesheetRequest request, Timesheet original) {
+    public Timesheet(Timesheet request, Timesheet original) {
         //****** Build Location object *******//
-        Location location = Location.builder()
-                .address1(Optional.ofNullable(request.getLocation().getAddress1()).orElse("").toUpperCase())
-                .address2(Optional.ofNullable(request.getLocation().getAddress2()).orElse("").toUpperCase())
-                .city(Optional.ofNullable(request.getLocation().getCity()).orElse("").toUpperCase())
-                .state(Optional.ofNullable(request.getLocation().getState()).orElse("").toUpperCase())
-                .zip(Optional.ofNullable(request.getLocation().getZip()).orElse("").toUpperCase())
-                .build();
-        this.location = location;
-        this.customer = new Customer(request, original);
+        this.location = new Location(request.getLocation(), original.getLocation());
+        this.customer = new Customer(request.getCustomer(), original.getCustomer());
+        this.id = request.getId();
+        this.companyId = request.companyId;
+        this.customerId = Optional.ofNullable(customer.getId()).orElse(original.getCustomerId());
         this.date = Optional.ofNullable(request.getDate()).orElse(original.getDate());
         this.employeeInstances = Optional.ofNullable(request.getEmployeeInstances()).orElse(original.getEmployeeInstances());
+        this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(original.getEmployeeIds());
         this.isComplete = Optional.ofNullable(request.getIsComplete()).orElse(original.getIsComplete());
         this.workOrderNumber = Optional.ofNullable(request.getWorkOrderNumber()).orElse(original.getWorkOrderNumber()).toUpperCase();
         this.department = Optional.ofNullable(request.getDepartment()).orElse(original.getDepartment()).toUpperCase();

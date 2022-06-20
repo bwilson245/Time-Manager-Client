@@ -51,31 +51,37 @@ public class Customer {
     @DynamoDBAttribute(attributeName = "type")
     private TypeEnum type = TypeEnum.CUSTOMER;
 
-    public Customer(EditTimesheetRequest request, Timesheet original) {
-        this.location = Location.builder()
-                .address1(Optional.ofNullable(request.getCustomer().getLocation().getAddress1())
-                        .orElse(original.getCustomer().getLocation().getAddress1()).toUpperCase())
-                .address2(Optional.ofNullable(request.getCustomer().getLocation().getAddress2())
-                        .orElse(original.getCustomer().getLocation().getAddress2()).toUpperCase())
-                .city(Optional.ofNullable(request.getCustomer().getLocation().getCity())
-                        .orElse(original.getCustomer().getLocation().getCity()).toUpperCase())
-                .state(Optional.ofNullable(request.getCustomer().getLocation().getState())
-                        .orElse(original.getCustomer().getLocation().getState()).toUpperCase())
-                .zip(Optional.ofNullable(request.getCustomer().getLocation().getZip())
-                        .orElse(original.getCustomer().getLocation().getZip()).toUpperCase())
-                .build();
-        this.id = Optional.ofNullable(request.getCustomer().getId())
-                .orElse(original.getCustomer().getId()).toUpperCase();
-        this.companyId = Optional.ofNullable(request.getCustomer().getName())
-                .orElse(original.getCustomer().getName()).toUpperCase();
-        this.name = Optional.ofNullable(request.getCustomer().getName())
-                .orElse(original.getCustomer().getName()).toUpperCase();
-        this.timesheetIds = Optional.ofNullable(request.getCustomer().getTimesheetIds())
-                .orElse(original.getCustomer().getTimesheetIds());
-        this.employeeIds = Optional.ofNullable(request.getCustomer().getEmployeeIds())
-                .orElse(original.getCustomer().getEmployeeIds());
-        this.isActive = Optional.ofNullable(request.getCustomer().getIsActive())
-                .orElse(original.getCustomer().getIsActive());
+    public Customer(Customer request) {
+        this.location = new Location(request.getLocation());
+        this.id = Optional.ofNullable(request.getId())
+                .orElse("").toUpperCase();
+        this.companyId = Optional.ofNullable(request.getName())
+                .orElse("").toUpperCase();
+        this.name = Optional.ofNullable(request.getName())
+                .orElse("").toUpperCase();
+        this.timesheetIds = Optional.ofNullable(request.getTimesheetIds())
+                .orElse(new ArrayList<>());
+        this.employeeIds = Optional.ofNullable(request.getEmployeeIds())
+                .orElse(new ArrayList<>());
+        this.isActive = Optional.ofNullable(request.getIsActive())
+                .orElse(false);
+        this.type = TypeEnum.CUSTOMER;
+    }
+
+    public Customer(Customer request, Customer original) {
+        this.location = new Location(request.getLocation(), original.getLocation());
+        this.id = Optional.ofNullable(request.getId())
+                .orElse(original.getId()).toUpperCase();
+        this.companyId = Optional.ofNullable(request.getName())
+                .orElse(original.getName()).toUpperCase();
+        this.name = Optional.ofNullable(request.getName())
+                .orElse(original.getName()).toUpperCase();
+        this.timesheetIds = Optional.ofNullable(request.getTimesheetIds())
+                .orElse(original.getTimesheetIds());
+        this.employeeIds = Optional.ofNullable(request.getEmployeeIds())
+                .orElse(original.getEmployeeIds());
+        this.isActive = Optional.ofNullable(request.getIsActive())
+                .orElse(original.getIsActive());
         this.type = TypeEnum.CUSTOMER;
     }
 }

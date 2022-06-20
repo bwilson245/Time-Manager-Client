@@ -14,7 +14,7 @@ import java.util.*;
 
 @Data
 @Singleton
-public class TimesheetService implements ServiceDao<Timesheet, CreateTimesheetRequest, EditTimesheetRequest> {
+public class TimesheetService implements ServiceDao<Timesheet> {
     private DynamoDbDao dao;
     private CacheManager cacheManager;
 
@@ -59,7 +59,7 @@ public class TimesheetService implements ServiceDao<Timesheet, CreateTimesheetRe
      */
 
     @Override
-    public Timesheet create(CreateTimesheetRequest request) {
+    public Timesheet create(Timesheet request) {
 
         //****** Builds a new Timesheet object from the request *******//
         Timesheet timesheet = new Timesheet(request);
@@ -90,15 +90,14 @@ public class TimesheetService implements ServiceDao<Timesheet, CreateTimesheetRe
      * Retrieved Lists are converted to Set for the purpose of avoiding duplication of Ids.
      * In the event that employees are removed from a timesheet, the removed employees will have this timesheet id
      * removed from their list of timesheetIds.
-     * @param id - The id associated with the original timesheet.
      * @param request - The request object containing the variables to assign to the timesheet.
      * @return - returns the modified Timesheet object.
      */
     @Override
-    public Timesheet edit(String id, EditTimesheetRequest request) {
+    public Timesheet edit(Timesheet request) {
 
         //****** Define original and new timesheet and customer *******//
-        Timesheet originalTimesheet = cacheManager.getTimesheetCache().get(id);
+        Timesheet originalTimesheet = cacheManager.getTimesheetCache().get(request.getId());
         Timesheet timesheet = new Timesheet(request, originalTimesheet);
         Customer originalCustomer = originalTimesheet.getCustomer();
         Customer customer = timesheet.getCustomer();

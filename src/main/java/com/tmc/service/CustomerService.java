@@ -16,14 +16,11 @@ import lombok.Data;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Data
 @Singleton
-public class CustomerService implements ServiceDao<Customer, CreateCustomerRequest, EditCustomerRequest> {
+public class CustomerService implements ServiceDao<Customer> {
     private DynamoDbDao dao;
     private CacheManager cacheManager;
 
@@ -35,27 +32,14 @@ public class CustomerService implements ServiceDao<Customer, CreateCustomerReque
 
 
     @Override
-    public Customer create(CreateCustomerRequest request) {
+    public Customer create(Customer request) {
         Company company = cacheManager.getCompanyCache().get(request.getCompanyId());
 
-        Location location = Location.builder()
-                .address1(request.getAddress1().toUpperCase())
-                .address2(request.getAddress2().toUpperCase())
-                .city(request.getCity().toUpperCase())
-                .state(request.getState().toUpperCase())
-                .zip(request.getZip())
-                .build();
+        Customer customer = new Customer(request);
 
-        Customer customer = Customer.builder()
-                .id(UUID.randomUUID().toString())
-                .companyId(company.getId())
-                .name(request.getName().toUpperCase())
-                .location(location)
-                .build();
-
-        List<String> customerIds = new ArrayList<>(company.getCustomerIds());
+        Set<String> customerIds = new HashSet<>(company.getCustomerIds());
         customerIds.add(customer.getId());
-        company.setCustomerIds(customerIds);
+        company.setCustomerIds(new ArrayList<>(customerIds));
 
         cacheManager.getCustomerCache().getCache().put(customer.getId(), customer);
         dao.saveCompany(company);
@@ -63,19 +47,8 @@ public class CustomerService implements ServiceDao<Customer, CreateCustomerReque
     }
 
     @Override
-    public Customer edit(String id, EditCustomerRequest request) {
-        Customer customer = cacheManager.getCustomerCache().getCache().getUnchecked(id);
-
-        Location location = Location.builder()
-                .address1(Optional.ofNullable(request.getAddress1()).orElse(customer.getLocation().getAddress1()).toUpperCase())
-                .address2(Optional.ofNullable(request.getAddress2()).orElse(customer.getLocation().getAddress2()).toUpperCase())
-                .city(Optional.ofNullable(request.getCity()).orElse(customer.getLocation().getCity()).toUpperCase())
-                .state(Optional.ofNullable(request.getState()).orElse(customer.getLocation().getState()).toUpperCase())
-                .zip(Optional.ofNullable(request.getZip()).orElse(customer.getLocation().getZip()))
-                .build();
-
-        customer.setLocation(location);
-        customer.setName(Optional.ofNullable(request.getName()).orElse(customer.getName()).toUpperCase());
+    public Customer edit(Customer request) {
+        Customer customer = new Customer(request, cacheManager.getCustomerCache().getCache().getUnchecked(request.getId()));
 
         cacheManager.getCustomerCache().getCache().put(customer.getId(), customer);
         return dao.saveCustomer(customer);
@@ -83,7 +56,7 @@ public class CustomerService implements ServiceDao<Customer, CreateCustomerReque
 
     @Override
     public Customer deactivate(String id) {
-        Customer customer = cacheManager.getCustomerCache().getCache().getUnchecked(id);
+        Customer customer = new Customer(cacheManager.getCustomerCache().getCache().getUnchecked(id));
         customer.setIsActive(false);
         return dao.saveCustomer(customer);
     }

@@ -1,6 +1,7 @@
 package com.tmc.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.google.googlejavaformat.Op;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +9,8 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -45,4 +48,26 @@ public class Company {
     @DynamoDBTypeConvertedEnum
     @DynamoDBAttribute(attributeName = "type")
     private TypeEnum type = TypeEnum.COMPANY;
+
+    public Company(Company request) {
+        this.id = Optional.ofNullable(request.getId()).orElse(UUID.randomUUID().toString());
+        this.name = Optional.ofNullable(request.getName()).orElse("").toUpperCase();
+        this.location = new Location(request.getLocation());
+        this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(new ArrayList<>());
+        this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(new ArrayList<>());
+        this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(new ArrayList<>());
+        this.isActive = Optional.ofNullable(request.getIsActive()).orElse(false);
+        this.type = TypeEnum.COMPANY;
+    }
+
+    public Company(Company request, Company original) {
+        this.id = Optional.ofNullable(request.getId()).orElse(original.getId());
+        this.name = Optional.ofNullable(request.getName()).orElse(original.getName()).toUpperCase();
+        this.location = new Location(request.getLocation(), original.getLocation());
+        this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(original.getCustomerIds());
+        this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(original.getEmployeeIds());
+        this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());
+        this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.isActive);
+        this.type = TypeEnum.COMPANY;
+    }
 }

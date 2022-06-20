@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -51,4 +53,28 @@ public class Employee {
     @DynamoDBIndexRangeKey(attributeName = "type", globalSecondaryIndexNames = {"companyId-type-index"})
     @DynamoDBAttribute(attributeName = "type")
     private TypeEnum type = TypeEnum.EMPLOYEE;
+
+    public Employee(Employee request) {
+        this.id = Optional.ofNullable(request.getId()).orElse(UUID.randomUUID().toString());
+        this.companyId = Optional.ofNullable(request.getCompanyId()).orElse("");
+        this.name = Optional.ofNullable(request.getName()).orElse("").toUpperCase();
+        this.email = Optional.ofNullable(request.getEmail()).orElse("");
+        this.password = Optional.ofNullable(request.getPassword()).orElse("");
+        this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(new ArrayList<>());
+        this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(new ArrayList<>());
+        this.isActive = Optional.ofNullable(request.getIsActive()).orElse(false);
+        this.type = TypeEnum.EMPLOYEE;
+    }
+
+    public Employee(Employee request, Employee original) {
+        this.id = Optional.ofNullable(request.getId()).orElse(original.getId());
+        this.companyId = Optional.ofNullable(request.getCompanyId()).orElse(original.getCompanyId());
+        this.name = Optional.ofNullable(request.getName()).orElse(original.getName()).toUpperCase();
+        this.email = Optional.ofNullable(request.getEmail()).orElse(original.getEmail());
+        this.password = Optional.ofNullable(request.getPassword()).orElse(original.getPassword());
+        this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(original.getCustomerIds());
+        this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());
+        this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.isActive);
+        this.type = TypeEnum.EMPLOYEE;
+    }
 }

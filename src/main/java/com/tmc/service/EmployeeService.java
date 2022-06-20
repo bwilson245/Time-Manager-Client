@@ -15,7 +15,7 @@ import java.util.*;
 
 @Data
 @Singleton
-public class EmployeeService implements ServiceDao<Employee, CreateEmployeeRequest, EditEmployeeRequest> {
+public class EmployeeService implements ServiceDao<Employee> {
 
     private DynamoDbDao dao;
     private CacheManager cacheManager;
@@ -65,16 +65,10 @@ public class EmployeeService implements ServiceDao<Employee, CreateEmployeeReque
      * @return - the new Employee object.
      */
     @Override
-    public Employee create(CreateEmployeeRequest request) {
+    public Employee create(Employee request) {
         Company company = cacheManager.getCompanyCache().get(request.getCompanyId());
 
-        Employee employee = Employee.builder()
-                .companyId(company.getId())
-                .id(UUID.randomUUID().toString())
-                .name(request.getName().toUpperCase())
-                .email(request.getEmail())
-                .password(request.getPassword())
-                .build();
+        Employee employee = new Employee(request);
 
         Set<String> employeeIds = new HashSet<>(company.getEmployeeIds());
         employeeIds.add(employee.getId());
@@ -88,19 +82,13 @@ public class EmployeeService implements ServiceDao<Employee, CreateEmployeeReque
 
     /**
      * Modifies an Employee object.
-     * @param id - (required) - the id of the employee to modify.
      * @param request - (optional) - the values to assign to the employee. The values are optional, however the request
      *                object itself is required to pass into the method.
      * @return - returns the modified employee.
      */
     @Override
-    public Employee edit(String id, EditEmployeeRequest request) {
-        Employee employee = cacheManager.getEmployeeCache().get(id);
-
-        employee.setName(Optional.ofNullable(request.getName()).orElse(employee.getName()));
-        employee.setEmail(Optional.ofNullable(request.getEmail()).orElse(employee.getEmail()));
-        employee.setPassword(Optional.ofNullable(request.getPassword()).orElse(employee.getPassword()));
-        employee.setName(employee.getName().toUpperCase());
+    public Employee edit(Employee request) {
+        Employee employee = new Employee(cacheManager.getEmployeeCache().get(request.getId()));
 
         cacheManager.getEmployeeCache().getCache().put(employee.getId(), employee);
         return dao.saveEmployee(employee);
@@ -113,7 +101,7 @@ public class EmployeeService implements ServiceDao<Employee, CreateEmployeeReque
      */
     @Override
     public Employee deactivate(String id) {
-        Employee employee = cacheManager.getEmployeeCache().get(id);
+        Employee employee = new Employee(cacheManager.getEmployeeCache().get(id));
         employee.setIsActive(false);
         return dao.saveEmployee(employee);
     }
