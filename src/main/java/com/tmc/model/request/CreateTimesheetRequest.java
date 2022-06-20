@@ -24,5 +24,6 @@ public class CreateTimesheetRequest {
     private String workOrderNumber;
     private String department;
     private String description;
+    private String workType;
     private String type;
 }

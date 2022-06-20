@@ -1,6 +1,7 @@
 package com.tmc.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
+import com.tmc.model.request.EditTimesheetRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

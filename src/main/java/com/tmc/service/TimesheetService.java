@@ -61,14 +61,8 @@ public class TimesheetService implements ServiceDao<Timesheet, CreateTimesheetRe
     @Override
     public Timesheet create(CreateTimesheetRequest request) {
 
-        //****** Build a Location Object *******//
-        Location location = Location.builder()
-                .address1(request.getLocation().getAddress1().toUpperCase())
-                .address2(request.getLocation().getAddress2().toUpperCase())
-                .city(request.getLocation().getCity().toUpperCase())
-                .state(request.getLocation().getState().toUpperCase())
-                .zip(request.getLocation().getZip())
-                .build();
+        //****** Builds a new Timesheet object from the request *******//
+        Timesheet timesheet = new Timesheet(request);
 
         //****** Retrieve the Company object *******//
         Company company = cacheManager.getCompanyCache().get(request.getCompanyId());
@@ -78,22 +72,6 @@ public class TimesheetService implements ServiceDao<Timesheet, CreateTimesheetRe
             instance.setCompanyId(company.getId());
             instance.setName(instance.getName().toUpperCase());
         }
-
-        //****** Build a Timesheet object *******//
-        Timesheet timesheet = Timesheet.builder()
-                .id(UUID.randomUUID().toString())
-                .companyId(request.getCompanyId())
-                .customerId("")
-                .location(location)
-                .customer(request.getCustomer())
-                .date(request.getDate())
-                .employeeInstances(request.getEmployeeInstances())
-                .isComplete(request.getIsComplete())
-                .workOrderNumber(request.getWorkOrderNumber())
-                .department(request.getDepartment().toUpperCase())
-                .description(request.getDescription())
-                .workType(request.getType().toUpperCase())
-                .build();
 
         //****** Add the timesheetId to the company's timesheetIds *******//
         Set<String> timesheetIds = new HashSet<>(company.getTimesheetIds());
@@ -118,81 +96,21 @@ public class TimesheetService implements ServiceDao<Timesheet, CreateTimesheetRe
      */
     @Override
     public Timesheet edit(String id, EditTimesheetRequest request) {
-        Timesheet timesheet = cacheManager.getTimesheetCache().get(id);
 
-        //****** Store original Lists *******//
-        Set<String> originalEmployeeIds = new HashSet<>(timesheet.getEmployeeIds());
+        //****** Define original and new timesheet and customer *******//
+        Timesheet originalTimesheet = cacheManager.getTimesheetCache().get(id);
+        Timesheet timesheet = new Timesheet(request, originalTimesheet);
+        Customer originalCustomer = originalTimesheet.getCustomer();
+        Customer customer = timesheet.getCustomer();
 
+
+        //****** Build a list of ids that were removed *******//
         Set<String> originalEmployeeInstanceIds = new HashSet<>();
-        for (EmployeeInstance instance : timesheet.getEmployeeInstances()) {
+        for (EmployeeInstance instance : originalTimesheet.getEmployeeInstances()) {
             if (instance.getId() != null) {
                 originalEmployeeInstanceIds.add(instance.getId());
             }
         }
-
-        //****** Build Location object *******//
-        Location location = Location.builder()
-                .address1(Optional.ofNullable(request.getLocation().getAddress1())
-                        .orElse(Optional.ofNullable(timesheet.getLocation().getAddress1())
-                                .orElse("")).toUpperCase())
-                .address2(Optional.ofNullable(request.getLocation().getAddress2())
-                        .orElse(Optional.ofNullable(timesheet.getLocation().getAddress2())
-                                .orElse("")).toUpperCase())
-                .city(Optional.ofNullable(request.getLocation().getCity())
-                        .orElse(Optional.ofNullable(timesheet.getLocation().getCity())
-                                .orElse("")).toUpperCase())
-                .state(Optional.ofNullable(request.getLocation().getState())
-                        .orElse(Optional.ofNullable(timesheet.getLocation().getState())
-                                .orElse("")).toUpperCase())
-                .zip(Optional.ofNullable(request.getLocation().getZip())
-                        .orElse(Optional.ofNullable(timesheet.getLocation().getZip())
-                                .orElse("")))
-                .build();
-
-
-
-        //****** Modify Customer object *******//
-        Customer customer = Optional.ofNullable(request.getCustomer()).orElse(timesheet.getCustomer());
-        customer.getLocation().setAddress1(Optional.ofNullable(request.getCustomer().getLocation().getAddress1())
-                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getAddress1())
-                        .orElse("")).toUpperCase());
-        customer.getLocation().setAddress2(Optional.ofNullable(request.getCustomer().getLocation().getAddress2())
-                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getAddress2())
-                        .orElse("")).toUpperCase());
-        customer.getLocation().setCity(Optional.ofNullable(request.getCustomer().getLocation().getCity())
-                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getCity())
-                        .orElse("")).toUpperCase());
-        customer.getLocation().setState(Optional.ofNullable(request.getCustomer().getLocation().getState())
-                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getState())
-                        .orElse("")).toUpperCase());
-        customer.getLocation().setZip(Optional.ofNullable(request.getCustomer().getLocation().getZip())
-                .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getZip())
-                        .orElse("")).toUpperCase());
-
-        //****** Modify Timesheet object *******//
-        timesheet.setLocation(location);
-        timesheet.setCustomer(Optional.ofNullable(request.getCustomer())
-                .orElse(timesheet.getCustomer()));
-        timesheet.setDate(Optional.ofNullable(request.getDate())
-                .orElse(timesheet.getDate()));
-        timesheet.setEmployeeInstances(Optional.ofNullable(request.getEmployeeInstances())
-                .orElse(timesheet.getEmployeeInstances()));
-        timesheet.setIsComplete(Optional.ofNullable(request.getIsComplete())
-                .orElse(timesheet.getIsComplete()));
-        timesheet.setWorkOrderNumber(Optional.ofNullable(request.getWorkOrderNumber())
-                .orElse(timesheet.getWorkOrderNumber()));
-        timesheet.setDepartment(Optional.ofNullable(request.getDepartment())
-                .orElse(timesheet.getDepartment()));
-        timesheet.setDescription(Optional.ofNullable(request.getDescription())
-                .orElse(timesheet.getDescription()));
-        timesheet.setWorkType(Optional.ofNullable(request.getWorkType())
-                .orElse(timesheet.getWorkType()));
-        timesheet.setIsValidated(Optional.ofNullable(request.getIsValidated())
-                .orElse(timesheet.getIsValidated()));
-
-
-
-        //****** Build a list of ids that were removed *******//
         Set<String> newEmployeeIds = new HashSet<>();
         for (EmployeeInstance instance : timesheet.getEmployeeInstances()) {
             newEmployeeIds.add(instance.getId());
@@ -205,11 +123,15 @@ public class TimesheetService implements ServiceDao<Timesheet, CreateTimesheetRe
         }
 
         //****** Remove this timesheet from removed employees timesheetIds *******//
+        //****** and remove each employee id from the customer employeeIds *******//
         if (difference.size() > 0) {
             Set<Employee> diffEmployees = new HashSet<>(cacheManager.getEmployeeCache().get(new ArrayList<>(difference)));
+            Set<String> customerEmployeeIds = new HashSet<>(customer.getEmployeeIds());
             for (Employee employee : diffEmployees) {
                 employee.getTimesheetIds().remove(timesheet.getId());
+                customerEmployeeIds.remove(employee.getId());
             }
+            customer.setEmployeeIds(new ArrayList<>(customerEmployeeIds));
             dao.batchSaveEmployees(new ArrayList<>(diffEmployees));
         }
 
@@ -225,11 +147,6 @@ public class TimesheetService implements ServiceDao<Timesheet, CreateTimesheetRe
             employee.setCustomerIds(new ArrayList<>(customerIds));
         }
 
-
-        //****** Build a list of customer's employeeIds and adds the new employees ids *******//
-        Set<String> originalCustomerEmployeeIds = new HashSet<>(timesheet.getCustomer().getEmployeeIds());
-        originalCustomerEmployeeIds.addAll(newEmployeeIds);
-        customer.setEmployeeIds(new ArrayList<>(originalCustomerEmployeeIds));
 
         //****** Build a list of customer's timesheetIds and adds the timesheetId *******//
         Set<String> timesheetIds = new HashSet<>(customer.getTimesheetIds());
