@@ -45,8 +45,9 @@ public class Timesheet {
     @DynamoDBAttribute(attributeName = "employeeIds")
     private List<String> employeeIds = new ArrayList<>();
 
+    @Builder.Default
     @DynamoDBAttribute(attributeName = "isComplete")
-    private Boolean isComplete;
+    private Boolean isComplete = false;
 
     @DynamoDBAttribute(attributeName = "workOrderNumber")
     private String workOrderNumber;

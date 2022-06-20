@@ -1,35 +1,34 @@
-package com.tmc.dao;
+package com.tmc.service;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.tmc.model.Company;
 import com.tmc.model.Location;
+import com.tmc.model.TypeEnum;
 import com.tmc.model.request.CreateCompanyRequest;
 import com.tmc.model.request.EditCompanyRequest;
-import org.checkerframework.checker.units.qual.C;
+import com.tmc.service.dao.DynamoDbDao;
+import com.tmc.service.inter.ServiceDao;
+import lombok.Data;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
+import javax.inject.Singleton;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class CompanyCachingDao {
-    private final DynamoDbDao dao;
-    private final LoadingCache<String, Company> cache;
+@Data
+@Singleton
+public class CompanyService implements ServiceDao<Company, CreateCompanyRequest, EditCompanyRequest> {
+    private DynamoDbDao dao;
+    private CacheManager cacheManager;
 
     @Inject
-    public CompanyCachingDao(DynamoDbDao dao) {
-        this.dao = dao;
-        this.cache = CacheBuilder.newBuilder()
-                .build(CacheLoader.from(dao::getCompany));
+    public CompanyService(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+        this.dao = cacheManager.getDao();
     }
 
-    public Company getCompany(String id) {
-        return cache.getUnchecked(id);
-    }
-
-    public Company createCompany(CreateCompanyRequest request) {
+    @Override
+    public Company create(CreateCompanyRequest request) {
         Company company = Company.builder()
                 .id(UUID.randomUUID().toString())
                 .name(request.getName().toUpperCase())
@@ -42,12 +41,13 @@ public class CompanyCachingDao {
                         .build())
                 .build();
 
-        cache.put(company.getId(), company);
+        cacheManager.getCompanyCache().getCache().put(company.getId(), company);
         return dao.saveCompany(company);
     }
 
-    public Company editCompany(String id, EditCompanyRequest request) {
-        Company company = cache.getUnchecked(id);
+    @Override
+    public Company edit(String id, EditCompanyRequest request) {
+        Company company = cacheManager.getCompanyCache().getCache().getUnchecked(id);
         Location location = company.getLocation();
 
         location.setAddress1(Optional.ofNullable(request.getAddress1()).orElse(company.getLocation().getAddress1()).toUpperCase());
@@ -59,13 +59,22 @@ public class CompanyCachingDao {
         company.setName(Optional.ofNullable(request.getName()).orElse(company.getName()).toUpperCase());
         company.setLocation(location);
 
-        cache.put(company.getId(), company);
+        cacheManager.getCompanyCache().getCache().put(company.getId(), company);
         return dao.saveCompany(company);
     }
 
-    public Company deactivateCompany(String id) {
-        Company company = cache.getUnchecked(id);
+    public Company deactivate(String id) {
+        Company company = cacheManager.getCompanyCache().getCache().getUnchecked(id);
         company.setIsActive(false);
         return dao.saveCompany(company);
+    }
+
+    @Override
+    public List<Company> search(TypeEnum type, String id, String name, String email, Boolean isActive) {
+        return null;
+    }
+    @Override
+    public List<Company> search(TypeEnum type, String id, String workType, String department, String orderNum, Long before, Long after, Boolean complete, Boolean validated) {
+        return null;
     }
 }

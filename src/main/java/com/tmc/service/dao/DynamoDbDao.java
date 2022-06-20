@@ -1,15 +1,19 @@
-package com.tmc.dao;
+package com.tmc.service.dao;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.tmc.model.*;
+import com.tmc.model.instance.EmployeeInstance;
+import lombok.Data;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.*;
 
+@Data
+@Singleton
 public class DynamoDbDao {
     private DynamoDBMapper mapper;
     private DynamoDB dynamoDB;
@@ -19,6 +23,8 @@ public class DynamoDbDao {
         this.mapper = mapper;
         this.dynamoDB = dynamoDB;
     }
+
+
 
     /*
     **************** TIMESHEET **************
@@ -233,57 +239,76 @@ public class DynamoDbDao {
     }
 
     public List<Employee> getEmployees(String table, Object obj, String name, String email, Boolean isActive) {
-        Map<String, String> nameMap = new HashMap<>();
-        Map<String, AttributeValue> valueMap = new HashMap<>();
-
-        String filterExpression = "";
-
-        if (obj instanceof Company) {
-            nameMap.put("#id", "companyId");
-            valueMap.put(":id", new AttributeValue().withS(((Company) obj).getId()));
+        Set<String> ids = new HashSet<>();
+        if (obj instanceof Timesheet) {
+            obj = mapper.load(Timesheet.class, ((Timesheet) obj).getId());
+            ids.addAll(((Timesheet) obj).getEmployeeIds());
+        } else if (obj instanceof Customer) {
+            obj = mapper.load(Customer.class, ((Customer) obj).getId());
+            ids.addAll(((Customer) obj).getEmployeeIds());
+        } else if (obj instanceof Company) {
+            obj = mapper.load(Company.class, ((Company) obj).getId());
+            ids.addAll(((Company) obj).getEmployeeIds());
         }
 
-        if (name != null) {
-            nameMap.put("#name", "name");
-            valueMap.put(":name", new AttributeValue().withS(name.toUpperCase()));
-            if (filterExpression.length() == 0) {
-                filterExpression = filterExpression.concat("contains(#name, :name)");
-            } else {
-                filterExpression = filterExpression.concat(" and contains(#name, :name)");
-            }
-        }
+        Set<Employee> employees = new HashSet<>(getEmployees(new ArrayList<>(ids)));
 
-        if (email != null) {
-            nameMap.put("#email", "email");
-            valueMap.put(":email", new AttributeValue().withS(email));
-            if (filterExpression.length() == 0) {
-                filterExpression = filterExpression.concat("contains(#email, :email)");
-            } else {
-                filterExpression = filterExpression.concat(" and contains(#email, :email)");
-            }
-        }
+        employees.removeIf(next -> (name != null && next.getName().contains(name))
+                || (email != null && next.getEmail().contains(email))
+                || (isActive != null && next.getIsActive() != isActive));
+        return new ArrayList<>(employees);
 
-        if (isActive != null) {
-            nameMap.put("#isActive", "isActive");
-            valueMap.put(":isActive", new AttributeValue().withBOOL(isActive));
-            if (filterExpression.length() == 0) {
-                filterExpression = filterExpression.concat("#isActive = :isActive");
-            } else {
-                filterExpression = filterExpression.concat(" and #isActive = :isActive");
-            }
-        }
-
-        DynamoDBQueryExpression<Employee> expression = new DynamoDBQueryExpression<Employee>()
-                .withIndexName(table)
-                .withKeyConditionExpression("#id = :id")
-                .withExpressionAttributeNames(nameMap)
-                .withExpressionAttributeValues(valueMap)
-                .withConsistentRead(false);
-
-        if (name != null || email != null || isActive != null) {
-            expression.withFilterExpression(filterExpression);
-        }
-        return mapper.query(Employee.class, expression);
+//        Map<String, String> nameMap = new HashMap<>();
+//        Map<String, AttributeValue> valueMap = new HashMap<>();
+//
+//
+//        if (obj instanceof Timesheet) {
+//            return getEmployees((Timesheet) obj, name, email, isActive);
+//        }
+//
+//        if (obj instanceof Company) {
+//            nameMap.put("#id", "companyId");
+//            valueMap.put(":id", new AttributeValue().withS(((Company) obj).getId()));
+//            nameMap.put("#type", "type");
+//            valueMap.put(":type", new AttributeValue().withS(TypeEnum.COMPANY.toString()));
+//        }
+//
+//        if (obj instanceof Customer) {
+//            nameMap.put("#id", "customerId");
+//            valueMap.put(":id", new AttributeValue().withS(((Customer) obj).getId()));
+//            nameMap.put("#type", "type");
+//            valueMap.put(":type", new AttributeValue().withS(TypeEnum.CUSTOMER.toString()));
+//        }
+//
+//        String filterExpression = "#type = :type";
+//
+//        if (name != null) {
+//            nameMap.put("#name", "name");
+//            valueMap.put(":name", new AttributeValue().withS(name.toUpperCase()));
+//            filterExpression = filterExpression.concat(" and contains(#name, :name)");
+//        }
+//
+//        if (email != null) {
+//            nameMap.put("#email", "email");
+//            valueMap.put(":email", new AttributeValue().withS(email));
+//            filterExpression = filterExpression.concat(" and contains(#email, :email)");
+//        }
+//
+//        if (isActive != null) {
+//            nameMap.put("#isActive", "isActive");
+//            valueMap.put(":isActive", new AttributeValue().withBOOL(isActive));
+//            filterExpression = filterExpression.concat(" and #isActive = :isActive");
+//        }
+//
+//        DynamoDBQueryExpression<Employee> expression = new DynamoDBQueryExpression<Employee>()
+//                .withIndexName(table)
+//                .withKeyConditionExpression("#id = :id")
+//                .withFilterExpression(filterExpression)
+//                .withExpressionAttributeNames(nameMap)
+//                .withExpressionAttributeValues(valueMap)
+//                .withConsistentRead(false);
+//
+//        return mapper.query(Employee.class, expression);
     }
 
     public List<Employee> batchSaveEmployees(List<Employee> employees) {

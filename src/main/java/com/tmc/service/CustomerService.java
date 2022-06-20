@@ -1,4 +1,4 @@
-package com.tmc.dao;
+package com.tmc.service;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -6,55 +6,37 @@ import com.google.common.cache.LoadingCache;
 import com.tmc.model.Company;
 import com.tmc.model.Customer;
 import com.tmc.model.Location;
+import com.tmc.model.TypeEnum;
 import com.tmc.model.request.CreateCustomerRequest;
 import com.tmc.model.request.EditCustomerRequest;
+import com.tmc.service.dao.DynamoDbDao;
+
+import com.tmc.service.inter.ServiceDao;
+import lombok.Data;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
-public class CustomerCachingDao {
-    private final DynamoDbDao dao;
-    private final CompanyCachingDao companyCachingDao;
-    private final LoadingCache<String, Customer> cache;
+@Data
+@Singleton
+public class CustomerService implements ServiceDao<Customer, CreateCustomerRequest, EditCustomerRequest> {
+    private DynamoDbDao dao;
+    private CacheManager cacheManager;
 
     @Inject
-    public CustomerCachingDao(DynamoDbDao dao, CompanyCachingDao companyCachingDao) {
-        this.dao = dao;
-        this.companyCachingDao = companyCachingDao;
-        this.cache = CacheBuilder.newBuilder()
-                .expireAfterWrite(1, TimeUnit.DAYS)
-                .maximumSize(1000)
-                .build(CacheLoader.from(dao::getCustomer));
+    public CustomerService(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+        this.dao = cacheManager.getDao();
     }
 
-    public Customer getCustomer(String id) {
-        return cache.getUnchecked(id);
-    }
 
-    public List<Customer> getCustomers(List<String> ids) {
-        List<Customer> cached = new ArrayList<>();
-        List<String> notCached = new ArrayList<>();
-        for (String id : ids) {
-            Customer customer = cache.getIfPresent(id);
-            if (customer == null) {
-                notCached.add(id);
-            } else {
-                cached.add(customer);
-            }
-        }
-        cached.addAll(dao.getCustomers(notCached));
-        for (Customer customer : cached) {
-            cache.put(customer.getId(), customer);
-        }
-        return cached;
-    }
-
-    public Customer createCustomer(CreateCustomerRequest request) {
-        Company company = companyCachingDao.getCompany(request.getCompanyId());
+    @Override
+    public Customer create(CreateCustomerRequest request) {
+        Company company = cacheManager.getCompanyCache().get(request.getCompanyId());
 
         Location location = Location.builder()
                 .address1(request.getAddress1().toUpperCase())
@@ -75,13 +57,14 @@ public class CustomerCachingDao {
         customerIds.add(customer.getId());
         company.setCustomerIds(customerIds);
 
-        cache.put(customer.getId(), customer);
+        cacheManager.getCustomerCache().getCache().put(customer.getId(), customer);
         dao.saveCompany(company);
         return dao.saveCustomer(customer);
     }
 
-    public Customer editCustomer(String id, EditCustomerRequest request) {
-        Customer customer = cache.getUnchecked(id);
+    @Override
+    public Customer edit(String id, EditCustomerRequest request) {
+        Customer customer = cacheManager.getCustomerCache().getCache().getUnchecked(id);
 
         Location location = Location.builder()
                 .address1(Optional.ofNullable(request.getAddress1()).orElse(customer.getLocation().getAddress1()).toUpperCase())
@@ -94,14 +77,23 @@ public class CustomerCachingDao {
         customer.setLocation(location);
         customer.setName(Optional.ofNullable(request.getName()).orElse(customer.getName()).toUpperCase());
 
-        cache.put(customer.getId(), customer);
+        cacheManager.getCustomerCache().getCache().put(customer.getId(), customer);
         return dao.saveCustomer(customer);
     }
 
-    public Customer deactivateCustomer(String id) {
-        Customer customer = cache.getUnchecked(id);
+    @Override
+    public Customer deactivate(String id) {
+        Customer customer = cacheManager.getCustomerCache().getCache().getUnchecked(id);
         customer.setIsActive(false);
         return dao.saveCustomer(customer);
     }
 
+    @Override
+    public List<Customer> search(TypeEnum type, String id, String name, String email, Boolean isActive) {
+        return null;
+    }
+    @Override
+    public List<Customer> search(TypeEnum type, String id, String workType, String department, String orderNum, Long before, Long after, Boolean complete, Boolean validated) {
+        return null;
+    }
 }

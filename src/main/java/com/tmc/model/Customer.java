@@ -36,6 +36,10 @@ public class Customer {
     private List<String> timesheetIds = new ArrayList<>();
 
     @Builder.Default
+    @DynamoDBAttribute(attributeName = "employeeIds")
+    private List<String> employeeIds = new ArrayList<>();
+
+    @Builder.Default
     @DynamoDBAttribute(attributeName = "isActive")
     private Boolean isActive = true;
 

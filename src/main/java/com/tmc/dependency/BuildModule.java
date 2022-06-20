@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+
 import dagger.Module;
 import dagger.Provides;
 
@@ -13,6 +14,7 @@ import javax.inject.Singleton;
 
 @Module
 public class BuildModule {
+
     @Provides
     @Singleton
     public DynamoDBMapper provideDynamoDbMapper(AmazonDynamoDB client) {
@@ -22,12 +24,7 @@ public class BuildModule {
     @Provides
     @Singleton
     public AmazonDynamoDB provideAmazonDynamoDb() {
-        AmazonDynamoDB client = AmazonDynamoDBClient.builder()
-                .withCredentials(new ProfileCredentialsProvider("Personal"))
-                .withRegion(Regions.US_EAST_1)
-                .build();
-
-        return client;
+        return AmazonDynamoDBClient.builder().withCredentials(new ProfileCredentialsProvider("Personal")).withRegion(Regions.US_EAST_1).build();
     }
 
     @Provides
@@ -35,4 +32,5 @@ public class BuildModule {
     public DynamoDB provideDynamoDb(AmazonDynamoDB client) {
         return new DynamoDB(client);
     }
+
 }

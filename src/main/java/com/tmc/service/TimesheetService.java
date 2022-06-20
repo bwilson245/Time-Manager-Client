@@ -1,67 +1,32 @@
-package com.tmc.dao;
+package com.tmc.service;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.tmc.model.*;
 import com.tmc.model.instance.EmployeeInstance;
 import com.tmc.model.request.CreateTimesheetRequest;
 import com.tmc.model.request.EditTimesheetRequest;
+import com.tmc.service.dao.DynamoDbDao;
+import com.tmc.service.inter.*;
+import lombok.Data;
 
 import javax.inject.Inject;
-import java.lang.reflect.Field;
+import javax.inject.Singleton;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
-public class TimesheetCachingDao {
-    private final DynamoDbDao dao;
-    private final LoadingCache<String, Timesheet> cache;
-    private final CompanyCachingDao companyCachingDao;
-    private final CustomerCachingDao customerCachingDao;
-    private final EmployeeCachingDao employeeCachingDao;
+@Data
+@Singleton
+public class TimesheetService implements ServiceDao<Timesheet, CreateTimesheetRequest, EditTimesheetRequest> {
+    private DynamoDbDao dao;
+    private CacheManager cacheManager;
 
     @Inject
-    public TimesheetCachingDao(DynamoDbDao dao, CompanyCachingDao companyCachingDao, CustomerCachingDao customerCachingDao, EmployeeCachingDao employeeCachingDao) {
-        this.dao = dao;
-        this.companyCachingDao = companyCachingDao;
-        this.customerCachingDao = customerCachingDao;
-        this.employeeCachingDao = employeeCachingDao;
-        this.cache = CacheBuilder.newBuilder()
-                .expireAfterWrite(5, TimeUnit.DAYS)
-                .maximumSize(10000)
-                .build(CacheLoader.from(dao::getTimesheet));
-
+    public TimesheetService(CacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+        this.dao = cacheManager.getDao();
     }
 
-    /**
-     * Returns a Timesheet object from cache. If it is not in the cache, retrieves it from the database.
-     * @param id - the id of the timesheet.
-     * @return - returns the timesheet.
-     */
-    public Timesheet getTimesheet(String id) {
-        return cache.getUnchecked(id);
-    }
 
-    public List<Timesheet> getTimesheets(List<String> ids) {
-        List<Timesheet> cached = new ArrayList<>();
-        List<String> notCached = new ArrayList<>();
-        for (String id : ids) {
-            Timesheet timesheet = cache.getIfPresent(id);
-            if (timesheet == null) {
-                notCached.add(id);
-            } else {
-                cached.add(timesheet);
-            }
-        }
-        cached.addAll(dao.getTimesheets(notCached));
-        for (Timesheet timesheet : cached) {
-            cache.put(timesheet.getId(), timesheet);
-        }
-        return cached;
-    }
-
-    public List<Timesheet> getTimesheetsSearch(TypeEnum type, String id, String workType, String department, String orderNum,
-                                               Long before, Long after, Boolean complete, Boolean validated) {
+    @Override
+    public List<Timesheet> search(TypeEnum type, String id, String workType, String department, String orderNum, Long before, Long after, Boolean complete, Boolean validated) {
         Object obj;
         String table;
         if (type == null) {
@@ -69,19 +34,20 @@ public class TimesheetCachingDao {
         }
         switch (type) {
             case CUSTOMER:
-                obj = customerCachingDao.getCustomer(id);
+                obj = cacheManager.getCustomerCache().get(id);
                 table = "customerId-type-index";
                 break;
             case EMPLOYEE:
-                obj = employeeCachingDao.getEmployee(id);
+                obj = cacheManager.getEmployeeCache().get(id);
                 table = "companyId-type-index";
                 break;
             default:
-                obj = companyCachingDao.getCompany(id);
+                obj = cacheManager.getCompanyCache().get(id);
                 table = "companyId-type-index";
         }
         return dao.getTimesheets(table, obj, workType, department, orderNum, before, after, complete, validated);
     }
+
 
     /**
      * Creates a new Timesheet object. Only requires basic information about the job. isValidated is set to false
@@ -91,7 +57,11 @@ public class TimesheetCachingDao {
      * @param request - The request object containing all the information required to build a new Timesheet.
      * @return returns the newly created Timesheet with isValidated = false.
      */
-    public Timesheet createTimesheet(CreateTimesheetRequest request) {
+
+    @Override
+    public Timesheet create(CreateTimesheetRequest request) {
+
+        //****** Build a Location Object *******//
         Location location = Location.builder()
                 .address1(request.getLocation().getAddress1().toUpperCase())
                 .address2(request.getLocation().getAddress2().toUpperCase())
@@ -100,13 +70,16 @@ public class TimesheetCachingDao {
                 .zip(request.getLocation().getZip())
                 .build();
 
-        Company company = companyCachingDao.getCompany(request.getCompanyId());
+        //****** Retrieve the Company object *******//
+        Company company = cacheManager.getCompanyCache().get(request.getCompanyId());
 
+        //****** Save the companyId and name to each EmployeeInstance *******//
         for (EmployeeInstance instance : request.getEmployeeInstances()) {
             instance.setCompanyId(company.getId());
             instance.setName(instance.getName().toUpperCase());
         }
 
+        //****** Build a Timesheet object *******//
         Timesheet timesheet = Timesheet.builder()
                 .id(UUID.randomUUID().toString())
                 .companyId(request.getCompanyId())
@@ -122,14 +95,17 @@ public class TimesheetCachingDao {
                 .workType(request.getType().toUpperCase())
                 .build();
 
+        //****** Add the timesheetId to the company's timesheetIds *******//
         Set<String> timesheetIds = new HashSet<>(company.getTimesheetIds());
         timesheetIds.add(timesheet.getId());
         company.setTimesheetIds(new ArrayList<>(timesheetIds));
 
+        //****** Save final values *******//
         dao.saveCompany(company);
-        cache.put(timesheet.getId(), timesheet);
+        cacheManager.getTimesheetCache().getCache().put(timesheet.getId(), timesheet);
         return dao.saveTimesheet(timesheet);
     }
+
 
     /**
      * Edits an existing timesheet.
@@ -140,9 +116,21 @@ public class TimesheetCachingDao {
      * @param request - The request object containing the variables to assign to the timesheet.
      * @return - returns the modified Timesheet object.
      */
-    public Timesheet editTimesheet(String id, EditTimesheetRequest request) {
-        Timesheet timesheet = cache.getUnchecked(id);
+    @Override
+    public Timesheet edit(String id, EditTimesheetRequest request) {
+        Timesheet timesheet = cacheManager.getTimesheetCache().get(id);
 
+        //****** Store original Lists *******//
+        Set<String> originalEmployeeIds = new HashSet<>(timesheet.getEmployeeIds());
+
+        Set<String> originalEmployeeInstanceIds = new HashSet<>();
+        for (EmployeeInstance instance : timesheet.getEmployeeInstances()) {
+            if (instance.getId() != null) {
+                originalEmployeeInstanceIds.add(instance.getId());
+            }
+        }
+
+        //****** Build Location object *******//
         Location location = Location.builder()
                 .address1(Optional.ofNullable(request.getLocation().getAddress1())
                         .orElse(Optional.ofNullable(timesheet.getLocation().getAddress1())
@@ -161,13 +149,9 @@ public class TimesheetCachingDao {
                                 .orElse("")))
                 .build();
 
-        Set<String> originalEmployeeInstanceIds = new HashSet<>();
-        for (EmployeeInstance instance : timesheet.getEmployeeInstances()) {
-            if (instance.getId() != null) {
-                originalEmployeeInstanceIds.add(instance.getId());
-            }
-        }
 
+
+        //****** Modify Customer object *******//
         Customer customer = Optional.ofNullable(request.getCustomer()).orElse(timesheet.getCustomer());
         customer.getLocation().setAddress1(Optional.ofNullable(request.getCustomer().getLocation().getAddress1())
                 .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getAddress1())
@@ -185,40 +169,54 @@ public class TimesheetCachingDao {
                 .orElse(Optional.ofNullable(timesheet.getCustomer().getLocation().getZip())
                         .orElse("")).toUpperCase());
 
+        //****** Modify Timesheet object *******//
         timesheet.setLocation(location);
-        timesheet.setCustomer(Optional.ofNullable(request.getCustomer()).orElse(timesheet.getCustomer()));
-        timesheet.setDate(Optional.ofNullable(request.getDate()).orElse(timesheet.getDate()));
-        timesheet.setEmployeeInstances(Optional.ofNullable(request.getEmployeeInstances()).orElse(timesheet.getEmployeeInstances()));
-        timesheet.setIsComplete(Optional.ofNullable(request.getIsComplete()).orElse(timesheet.getIsComplete()));
-        timesheet.setWorkOrderNumber(Optional.ofNullable(request.getWorkOrderNumber()).orElse(timesheet.getWorkOrderNumber()));
-        timesheet.setDepartment(Optional.ofNullable(request.getDepartment()).orElse(timesheet.getDepartment()));
-        timesheet.setDescription(Optional.ofNullable(request.getDescription()).orElse(timesheet.getDescription()));
-        timesheet.setWorkType(Optional.ofNullable(request.getWorkType()).orElse(timesheet.getWorkType()));
-        timesheet.setIsValidated(Optional.ofNullable(request.getIsValidated()).orElse(timesheet.getIsValidated()));
+        timesheet.setCustomer(Optional.ofNullable(request.getCustomer())
+                .orElse(timesheet.getCustomer()));
+        timesheet.setDate(Optional.ofNullable(request.getDate())
+                .orElse(timesheet.getDate()));
+        timesheet.setEmployeeInstances(Optional.ofNullable(request.getEmployeeInstances())
+                .orElse(timesheet.getEmployeeInstances()));
+        timesheet.setIsComplete(Optional.ofNullable(request.getIsComplete())
+                .orElse(timesheet.getIsComplete()));
+        timesheet.setWorkOrderNumber(Optional.ofNullable(request.getWorkOrderNumber())
+                .orElse(timesheet.getWorkOrderNumber()));
+        timesheet.setDepartment(Optional.ofNullable(request.getDepartment())
+                .orElse(timesheet.getDepartment()));
+        timesheet.setDescription(Optional.ofNullable(request.getDescription())
+                .orElse(timesheet.getDescription()));
+        timesheet.setWorkType(Optional.ofNullable(request.getWorkType())
+                .orElse(timesheet.getWorkType()));
+        timesheet.setIsValidated(Optional.ofNullable(request.getIsValidated())
+                .orElse(timesheet.getIsValidated()));
 
+
+
+        //****** Build a list of ids that were removed *******//
         Set<String> newEmployeeIds = new HashSet<>();
         for (EmployeeInstance instance : timesheet.getEmployeeInstances()) {
             newEmployeeIds.add(instance.getId());
         }
-
-        Set<String> newDiffIds = new HashSet<>();
+        Set<String> difference = new HashSet<>();
         for (String originId : originalEmployeeInstanceIds) {
             if (!newEmployeeIds.contains(originId)) {
-                newDiffIds.add(originId);
+                difference.add(originId);
             }
         }
-        if (newDiffIds.size() > 0) {
-            Set<Employee> diffEmployees = new HashSet<>(employeeCachingDao.getEmployees(new ArrayList<>(newDiffIds)));
+
+        //****** Remove this timesheet from removed employees timesheetIds *******//
+        if (difference.size() > 0) {
+            Set<Employee> diffEmployees = new HashSet<>(cacheManager.getEmployeeCache().get(new ArrayList<>(difference)));
             for (Employee employee : diffEmployees) {
                 employee.getTimesheetIds().remove(timesheet.getId());
             }
             dao.batchSaveEmployees(new ArrayList<>(diffEmployees));
         }
 
-        Set<String> employeeIds = new HashSet<>(timesheet.getEmployeeIds());
-        Set<Employee> employees = new HashSet<>(employeeCachingDao.getEmployees(new ArrayList<>(newEmployeeIds)));
+
+        //****** Add this timesheetId and customerId to each employee  *******//
+        Set<Employee> employees = new HashSet<>(cacheManager.getEmployeeCache().get(new ArrayList<>(newEmployeeIds)));
         for (Employee employee : employees) {
-            employeeIds.add(employee.getId());
             Set<String> timesheetIds = new HashSet<>(employee.getTimesheetIds());
             Set<String> customerIds = new HashSet<>(employee.getCustomerIds());
             timesheetIds.add(timesheet.getId());
@@ -226,16 +224,36 @@ public class TimesheetCachingDao {
             employee.setTimesheetIds(new ArrayList<>(timesheetIds));
             employee.setCustomerIds(new ArrayList<>(customerIds));
         }
-        timesheet.setEmployeeIds(new ArrayList<>(employeeIds));
 
-        customer = customerCachingDao.getCustomer(timesheet.getCustomer().getId());
+
+        //****** Build a list of customer's employeeIds and adds the new employees ids *******//
+        Set<String> originalCustomerEmployeeIds = new HashSet<>(timesheet.getCustomer().getEmployeeIds());
+        originalCustomerEmployeeIds.addAll(newEmployeeIds);
+        customer.setEmployeeIds(new ArrayList<>(originalCustomerEmployeeIds));
+
+        //****** Build a list of customer's timesheetIds and adds the timesheetId *******//
         Set<String> timesheetIds = new HashSet<>(customer.getTimesheetIds());
         timesheetIds.add(timesheet.getId());
         customer.setTimesheetIds(new ArrayList<>(timesheetIds));
-        timesheet.setCustomerId(customer.getId());
 
+
+        //****** Save final values *******//
+        timesheet.setCustomerId(customer.getId());
         dao.saveCustomer(customer);
         dao.batchSaveEmployees(new ArrayList<>(employees));
         return dao.saveTimesheet(timesheet);
+    }
+
+
+
+    @Override
+    public Timesheet deactivate(String id) {
+        return null;
+    }
+
+
+    @Override
+    public List<Timesheet> search(TypeEnum type, String id, String name, String email, Boolean isActive) {
+        return null;
     }
 }

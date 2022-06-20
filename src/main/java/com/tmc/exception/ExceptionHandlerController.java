@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +16,7 @@ import java.util.Map;
 public class ExceptionHandlerController extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(value
-            = { RuntimeException.class})
+            = { RuntimeException.class  })
     protected ResponseEntity<Object> handleConflict(
             RuntimeException ex, WebRequest request) {
         Map<String, Object> bodyOfResponse = new HashMap<>();
