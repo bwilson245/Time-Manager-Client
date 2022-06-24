@@ -65,10 +65,17 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideTimesheetService().create(request), HttpStatus.OK);
     }
 
-    @PutMapping("/timesheet/{id}")
+    @PutMapping("/timesheet")
     public ResponseEntity<Timesheet> editTimesheet(@RequestBody Timesheet request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideTimesheetService().edit(request, dagger.provideEmployeeService()), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/timesheet/{id}")
+    public ResponseEntity<Timesheet> deleteTimesheet(@PathVariable String id) {
+        ServiceComponent dagger = DaggerServiceComponent.create();
+        dagger.provideTimesheetService().deleteTimesheet(id);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     /*
@@ -103,10 +110,17 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideEmployeeService().create(request), HttpStatus.OK);
     }
 
-    @PutMapping("/employee/{id}")
+    @PutMapping("/employee")
     public ResponseEntity<Employee> editEmployee(@RequestBody Employee request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideEmployeeService().edit(request), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/employee/{id}")
+    public ResponseEntity<Employee> deleteEmployee(@PathVariable String id) {
+        ServiceComponent dagger = DaggerServiceComponent.create();
+        dagger.provideEmployeeService().deleteEmployee(id);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     /*
@@ -126,13 +140,9 @@ public class Controller {
 
     @GetMapping("/customer/search/{companyId}")
     public ResponseEntity<QueryResultPage<Customer>> searchCustomers(@PathVariable String id,
-                                                          @RequestParam (required = false) String name,
-                                                          @RequestParam (required = false) Location location,
-                                                          @RequestParam (required = false) Boolean isActive,
-                                                          @MatrixVariable (required = false) Map<String, AttributeValue> startKey,
-                                                          @RequestParam (required = false) Integer limit) {
+                                                                     @RequestBody SearchCustomerRequest request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideCustomerService().search(id, name, location, isActive, startKey, limit), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCustomerService().search(id, request), HttpStatus.OK);
     }
 
     @PostMapping("/customer")
@@ -141,10 +151,17 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideCustomerService().create(request), HttpStatus.OK);
     }
 
-    @PutMapping("/customer/{id}")
+    @PutMapping("/customer")
     public ResponseEntity<Customer> editCustomer(@RequestBody Customer request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideCustomerService().edit(request), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/customer/{id}")
+    public ResponseEntity<Timesheet> deleteCustomer(@PathVariable String id) {
+        ServiceComponent dagger = DaggerServiceComponent.create();
+        dagger.provideCustomerService().deleteCustomer(id);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     /*
@@ -168,10 +185,17 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideCompanyService().create(request), HttpStatus.OK);
     }
 
-    @PutMapping("/company/{id}")
+    @PutMapping("/company")
     public ResponseEntity<Company> editCompany(@RequestBody Company request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideCompanyService().edit(request), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/customer/{id}")
+    public ResponseEntity<Timesheet> deleteCompany(@PathVariable String id) {
+        ServiceComponent dagger = DaggerServiceComponent.create();
+        dagger.provideCompanyService().deleteCompany(id);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 }

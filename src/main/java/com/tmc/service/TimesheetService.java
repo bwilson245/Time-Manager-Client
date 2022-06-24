@@ -132,73 +132,93 @@ public class TimesheetService {
             throw new InvalidParameterException("Missing ID.");
         }
 
-        //****** Define original and new timesheet and customer *******//
-        Timesheet originalTimesheet = cacheManager.getTimesheetCache().getUnchecked(request.getId());
+        //****** Define original and new timesheet *******//
+        Timesheet originalTimesheet = timesheetCache.getUnchecked(request.getId());
         Timesheet timesheet = new Timesheet(request, originalTimesheet);
-        Customer customer = timesheet.getCustomer();
-
 
         //****** Build a list of ids that were removed *******//
         Set<String> originalEmployeeInstanceIds = originalTimesheet.getEmployeeInstances().stream().map(EmployeeInstance::getId).collect(Collectors.toSet());
         Set<String> newEmployeeIds = timesheet.getEmployeeInstances().stream().map(EmployeeInstance::getId).collect(Collectors.toSet());
-        Set<String> removed = originalEmployeeInstanceIds.stream().filter(id -> !newEmployeeIds.contains(id)).collect(Collectors.toSet());
+        Set<String> removed = new HashSet<>();
+        originalEmployeeInstanceIds.forEach(id -> {
+            if (!newEmployeeIds.contains(id)) {
+                removed.add(id);
+            }
+        });
 
 
         //****** Remove this timesheet from removed employees timesheetIds *******//
-        //****** and remove each employee id from the customer employeeIds *******//
-        Set<Employee> tmp = removed.stream().map((id) -> {
-            Employee employee = employeeService.get(id);
-            List<String> timesheetIds = employee.getTimesheetIds().stream().filter(i -> !i.equals(id)).collect(Collectors.toList());
-            List<String> employeeIds = customer.getEmployeeIds().stream().filter(i -> !i.equals(id)).collect(Collectors.toList());
+        removed.forEach(id -> {
+            Employee employee = employeeCache.getUnchecked(id);
+            List<String> timesheetIds = employee.getTimesheetIds();
+            timesheetIds.remove(timesheet.getId());
             employee.setTimesheetIds(new ArrayList<>(timesheetIds));
-            customer.setEmployeeIds(new ArrayList<>(employeeIds));
-            return employee;
-        }).collect(Collectors.toSet());
+            dao.saveEmployee(employee);
+        });
 
-
-        //****** set the new employeeIds to the timesheet and customer  *******//
+        //****** set the new employeeIds to the timesheet  *******//
         timesheet.setEmployeeIds(new ArrayList<>(newEmployeeIds));
-        Set<String> customerEmployeeIds = new HashSet<>(customer.getEmployeeIds());
-        customerEmployeeIds.addAll(timesheet.getEmployeeIds());
-        customer.setEmployeeIds(new ArrayList<>(customerEmployeeIds));
 
         //****** Add this timesheetId and customerId to each employee  *******//
         Set<Employee> employees = new HashSet<>(new ArrayList<>(employeeService.get(new ArrayList<>(newEmployeeIds))));
         employees.forEach(employee -> {
             Set<String> timesheetIds = new HashSet<>(employee.getTimesheetIds());
-            Set<String> customerIds = new HashSet<>(employee.getCustomerIds());
             timesheetIds.add(timesheet.getId());
-            customerIds.add(timesheet.getCustomer().getId());
             employee.setTimesheetIds(new ArrayList<>(timesheetIds));
-            employee.setCustomerIds(new ArrayList<>(customerIds));
         });
 
+        //****** Retrieve the customer object and modify it according to the timesheet *******//
+        if (!timesheet.getCustomerId().equals("*")) {
+            Customer customer = customerCache.getUnchecked(timesheet.getCustomerId());
 
-        //****** Build a list of customer's timesheetIds and adds the timesheetId *******//
-        Set<String> timesheetIds = new HashSet<>(customer.getTimesheetIds());
-        timesheetIds.add(timesheet.getId());
-        customer.setTimesheetIds(new ArrayList<>(timesheetIds));
+            //****** If original customer and new customer are different, remove this timesheetId from the original and save *******//
+            if (!timesheet.getCustomerId().equals(originalTimesheet.getCustomerId()) && originalTimesheet.getCustomerId() != null) {
+                Customer originalCustomer = customerCache.getUnchecked(originalTimesheet.getCustomerId());
+                originalCustomer.getTimesheetIds().remove(timesheet.getId());
+                originalCustomer.setTimesheetIds(new ArrayList<>(originalCustomer.getTimesheetIds()));
+                dao.saveCustomer(originalCustomer);
+            }
 
-        //****** Build a list of employee's timesheetIds and adds the timesheetId *******//
+            //****** Add the timesheetId to this customer *******//
+            Set<String> timesheetIds = new HashSet<>(customer.getTimesheetIds());
+            timesheetIds.add(timesheet.getId());
+            customer.setTimesheetIds(new ArrayList<>(timesheetIds));
 
-        //****** If some employees were removed, add them to employees list before batch save *******//
-        if (tmp.size() > 0) {
-            employees.addAll(tmp);
+
+            //****** Add the customerId to these employees *******//
+            employees.forEach(employee -> {
+                Set<String> customerIds = new HashSet<>(employee.getCustomerIds());
+                customerIds.add(customer.getId());
+                employee.setCustomerIds(new ArrayList<>(customerIds));
+
+                //****** Add the employeeIds to this customer *******//
+                Set<String> employeeIds = new HashSet<>(customer.getEmployeeIds());
+                employeeIds.add(employee.getId());
+                customer.setEmployeeIds(new ArrayList<>(employeeIds));
+            });
+
+            dao.saveCustomer(customer);
         }
 
         //****** Save final values *******//
-        dao.saveCustomer(customer);
         dao.batchSaveEmployees(new ArrayList<>(employees));
-        return dao.saveTimesheet(timesheet);
+        dao.saveTimesheet(timesheet);
+        return timesheet;
     }
 
-    public void toggleValidated(String id) {
-        if (id == null) {
-            throw new InvalidParameterException("Missing ID.");
-        }
+    public void deleteTimesheet(String id) {
         Timesheet timesheet = timesheetCache.getUnchecked(id);
-        timesheet.setIsValidated(!timesheet.getIsValidated());
-        dao.saveTimesheet(timesheet);
+        Company company = companyCache.getUnchecked(timesheet.getCompanyId());
+        List<Employee> employees = timesheet.getEmployeeIds().stream().map(employeeCache::getUnchecked).collect(Collectors.toList());
+        Customer customer = customerCache.getUnchecked(timesheet.getCustomerId());
+
+        company.getTimesheetIds().remove(id);
+        customer.getTimesheetIds().remove(id);
+        employees.forEach(e -> e.getTimesheetIds().remove(id));
+
+        dao.saveCompany(company);
+        dao.saveCustomer(customer);
+        dao.batchSaveEmployees(employees);
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -214,7 +234,7 @@ public class TimesheetService {
         CompanyService companyService = dagger.provideCompanyService();
         int numTimesheets = 1;
 
-        Company company = companyService.get("75b1a9c7-6887-4b75-8c2c-7a7219962f62");
+        Company company = companyService.get("company.a3c3ade2-a99d-40ce-b6bf-d59aee06c279");
         List<Employee> employees = employeeService.get(company.getEmployeeIds());
         List<Customer> customers = customerService.get(company.getCustomerIds());
         Random random = new Random();
@@ -252,7 +272,8 @@ public class TimesheetService {
 
             Timesheet timesheet = Timesheet.builder()
                     .employeeInstances(instances)
-                    .customer(customer)
+                    .customerName("test customerName")
+                    .customerLoc(customer.getLocation())
                     .location(customer.getLocation())
                     .companyId(company.getId())
                     .customerId(customer.getId())
@@ -265,7 +286,7 @@ public class TimesheetService {
                     .type(Const.TIMESHEET)
                     .build();
 
-            create(timesheet);
+            create(new Timesheet(timesheet));
             Thread.sleep(1000);
 
         }

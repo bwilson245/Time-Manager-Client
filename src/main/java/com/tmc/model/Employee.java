@@ -17,12 +17,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @DynamoDBTable(tableName = Const.PRIMARY_TABLE)
 public class Employee {
-    public static final String EMAIL_INDEX = "email-index";
 
+    @DynamoDBIndexRangeKey(attributeName = "_id", globalSecondaryIndexName = Const.COMPANY_ID_ID_INDEX_GSI)
     @DynamoDBHashKey(attributeName = "_id")
     private String id;
 
-    @DynamoDBIndexHashKey(attributeName = "_companyId", globalSecondaryIndexName = Const.COMPANY_ID_INDEX_GSI)
+    @DynamoDBIndexHashKey(attributeName = "_companyId", globalSecondaryIndexName = Const.COMPANY_ID_ID_INDEX_GSI)
     @DynamoDBAttribute(attributeName = "_companyId")
     private String companyId;
 
@@ -47,20 +47,16 @@ public class Employee {
     @DynamoDBAttribute(attributeName = "_isActive")
     private Boolean isActive = true;
 
-    @Builder.Default
-    @DynamoDBAttribute(attributeName = "_type")
-    private String type = Const.EMPLOYEE;
 
     public Employee(Employee request) {
         this.id = "employee." + UUID.randomUUID();
-        this.companyId = Optional.ofNullable(request.getCompanyId()).orElse("");
-        this.name = Optional.ofNullable(request.getName()).orElse("").toUpperCase();
-        this.email = Optional.ofNullable(request.getEmail()).orElse("");
-        this.password = Optional.ofNullable(request.getPassword()).orElse("");
+        this.companyId = Optional.ofNullable(request.getCompanyId()).orElse("*");
+        this.name = Optional.ofNullable(request.getName()).orElse("*").toUpperCase();
+        this.email = Optional.ofNullable(request.getEmail()).orElse("*");
+        this.password = Optional.ofNullable(request.getPassword()).orElse("*");
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(new ArrayList<>());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(new ArrayList<>());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(false);
-        this.type = Const.EMPLOYEE;
     }
 
     public Employee(Employee request, Employee original) {
@@ -72,6 +68,5 @@ public class Employee {
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(original.getCustomerIds());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.isActive);
-        this.type = Const.EMPLOYEE;
     }
 }

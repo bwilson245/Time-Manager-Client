@@ -43,19 +43,14 @@ public class Company {
     @DynamoDBAttribute(attributeName = "_isActive")
     private Boolean isActive = true;
 
-    @Builder.Default
-    @DynamoDBAttribute(attributeName = "_type")
-    private String type = Const.COMPANY;
-
     public Company(Company request) {
         this.id = "company." + UUID.randomUUID();
-        this.name = Optional.ofNullable(request.getName()).orElse("").toUpperCase();
+        this.name = Optional.ofNullable(request.getName()).orElse("*").toUpperCase();
         this.location = new Location(request.getLocation());
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(new ArrayList<>());
         this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(new ArrayList<>());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(new ArrayList<>());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(false);
-        this.type = Const.COMPANY;
     }
 
     public Company(Company request, Company original) {
@@ -66,6 +61,5 @@ public class Company {
         this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(original.getEmployeeIds());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.isActive);
-        this.type = Const.COMPANY;
     }
 }

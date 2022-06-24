@@ -18,10 +18,11 @@ import java.util.UUID;
 @DynamoDBTable(tableName = Const.PRIMARY_TABLE)
 public class Customer {
 
+    @DynamoDBIndexRangeKey(attributeName = "_id", globalSecondaryIndexName = Const.COMPANY_ID_ID_INDEX_GSI)
     @DynamoDBHashKey(attributeName = "_id")
     private String id;
 
-    @DynamoDBIndexHashKey(attributeName = "_companyId", globalSecondaryIndexName = Const.COMPANY_ID_INDEX_GSI)
+    @DynamoDBIndexHashKey(attributeName = "_companyId", globalSecondaryIndexName = Const.COMPANY_ID_ID_INDEX_GSI)
     @DynamoDBAttribute(attributeName = "_companyId")
     private String companyId;
 
@@ -43,9 +44,6 @@ public class Customer {
     @DynamoDBAttribute(attributeName = "_isActive")
     private Boolean isActive = true;
 
-    @Builder.Default
-    @DynamoDBAttribute(attributeName = "_type")
-    private String type = Const.CUSTOMER;
 
     public Customer(Customer request) {
         this.location = new Location(Optional.ofNullable(request.getLocation()).orElse(new Location()));
@@ -55,7 +53,6 @@ public class Customer {
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(new ArrayList<>());
         this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(new ArrayList<>());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(false);
-        this.type = Const.CUSTOMER;
     }
 
     public Customer(Customer request, Customer original) {
@@ -66,6 +63,5 @@ public class Customer {
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());
         this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(original.getEmployeeIds());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.getIsActive());
-        this.type = Const.CUSTOMER;
     }
 }

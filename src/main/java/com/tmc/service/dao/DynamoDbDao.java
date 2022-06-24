@@ -12,6 +12,7 @@ import com.tmc.exception.EmployeeNotFoundException;
 import com.tmc.exception.TimesheetNotFoundException;
 import com.tmc.model.*;
 import lombok.Data;
+import org.checkerframework.checker.units.qual.C;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import javax.inject.Inject;
@@ -178,6 +179,14 @@ public class DynamoDbDao {
         return timesheet;
     }
 
+    public void batchSaveTimesheets(List<Timesheet> timesheets) {
+        mapper.batchSave(timesheets);
+    }
+
+    public void batchDeleteTimesheets(List<Timesheet> timesheets) {
+        mapper.batchDelete(timesheets);
+    }
+
     /*
      **************** CUSTOMER **************
      */
@@ -209,61 +218,43 @@ public class DynamoDbDao {
     }
 
 
-    public QueryResultPage<Customer> searchCustomers(String id, String name, Location location, Boolean isActive, Map<String, AttributeValue> startKey, Integer limit) {
+    public QueryResultPage<Customer> searchCustomers(String id, SearchCustomerRequest request) {
 
-        if (limit == null || limit < 1) {
-            limit = 10;
+        if (request.getLimit() == null || request.getLimit() < 1) {
+            request.setLimit(10);
         }
 
         Map<String, String> nameMap = new HashMap<>();
         Map<String, AttributeValue> valueMap = new HashMap<>();
 
-        String table = "companyId-index";
-        String keyExpression = "#_companyId = :_companyId";
+        String table = Const.COMPANY_ID_ID_INDEX_GSI;
+        String keyExpression = "#_companyId = :_companyId and #_id begins_with :_id";
         String filterExpression = "";
 
 
         nameMap.put("#_companyId", "_companyId");
+        nameMap.put("#_id", "_:id");
         valueMap.put(":_companyId", new AttributeValue().withS(id));
+        valueMap.put(":_id", new AttributeValue().withS("customer."));
 
-        if (name != null) {
+        if (request.getName() != null) {
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
             filterExpression = filterExpression.concat("contains(#_name, :_name");
             nameMap.put("#_name", "_name");
-            valueMap.put(":_name", new AttributeValue().withS(name));
+            valueMap.put(":_name", new AttributeValue().withS(request.getName()));
         }
 
-        if (location != null) {
-            String city = location.getCity();
-            String state = location.getState();
-            String zip = location.getZip();
-            if (filterExpression.length() > 0) {
-                filterExpression = filterExpression.concat(" and ");
-            }
-            nameMap.put("#_location", "_location");
-            if (city != null) {
-                valueMap.put(":_city", new AttributeValue().withS(city));
-                filterExpression = filterExpression.concat("contains(#_location.city, :_city");
-            }
-            if (state != null) {
-                valueMap.put(":_state", new AttributeValue().withS(state));
-                filterExpression = filterExpression.concat("contains(#_location.state, :_state");
-            }
-            if (zip != null) {
-                valueMap.put(":_zip", new AttributeValue().withS(zip));
-                filterExpression = filterExpression.concat("contains(#_location.zip, :_zip");
-            }
-        }
 
-        if (isActive != null) {
+
+        if (request.getIsActive() != null) {
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
             filterExpression = filterExpression.concat("#_isActive = :_isActive");
             nameMap.put("#_isActive", "_isActive");
-            valueMap.put(":_isActive", new AttributeValue().withBOOL(isActive));
+            valueMap.put(":_isActive", new AttributeValue().withBOOL(request.getIsActive()));
         }
 
         DynamoDBQueryExpression<Customer> expression = new DynamoDBQueryExpression<Customer>()
@@ -271,17 +262,31 @@ public class DynamoDbDao {
                 .withKeyConditionExpression(keyExpression)
                 .withExpressionAttributeNames(nameMap)
                 .withExpressionAttributeValues(valueMap)
-                .withLimit(limit)
+                .withLimit(request.getLimit())
                 .withConsistentRead(false);
 
         if (filterExpression.length() > 0) {
             expression.setFilterExpression(filterExpression);
         }
-        if (startKey != null) {
-            expression.setExclusiveStartKey(startKey);
+        if (request.getStartKey() != null) {
+            expression.setExclusiveStartKey(request.getStartKey());
         }
 
         QueryResultPage<Customer> page = mapper.queryPage(Customer.class, expression);
+        List<Customer> results = new ArrayList<>(page.getResults());
+        int count = page.getCount();
+
+        if (count < request.getLimit()) {
+
+            while (count < request.getLimit() && page.getLastEvaluatedKey() != null) {
+                expression = expression.withLimit(request.getLimit() - page.getCount());
+                expression = expression.withExclusiveStartKey(page.getLastEvaluatedKey());
+                page = mapper.queryPage(Customer.class, expression);
+                results.addAll(page.getResults());
+                count += page.getCount();
+            }
+            page.setResults(new ArrayList<>(results));
+        }
         return page;
     }
 
@@ -289,8 +294,16 @@ public class DynamoDbDao {
         mapper.save(customer);
     }
 
+    public void batchSaveCustomers(List<Customer> customers) {
+        mapper.batchSave(customers);
+    }
+
     public void deleteCustomer(Customer customer) {
         mapper.delete(customer);
+    }
+
+    public void batchDeleteCustomers(List<Customer> customers) {
+        mapper.batchDelete(customers);
     }
 
     /*
@@ -331,7 +344,7 @@ public class DynamoDbDao {
         Map<String, String> nameMap = new HashMap<>();
         Map<String, AttributeValue> valueMap = new HashMap<>();
 
-        String table = Const.COMPANY_ID_INDEX_GSI;
+        String table = Const.COMPANY_ID_ID_INDEX_GSI;
         String keyExpression = "#_companyId = :_companyId";
 
 
@@ -406,6 +419,14 @@ public class DynamoDbDao {
         return employee;
     }
 
+    public void deleteEmployee(Employee employee) {
+        mapper.delete(employee);
+    }
+
+    public void batchDeleteEmployee(List<Employee> employees) {
+        mapper.batchDelete(employees);
+    }
+
     /*
      **************** COMPANY **************
      */
@@ -437,8 +458,11 @@ public class DynamoDbDao {
         return companies;
     }
 
-    public Company saveCompany(Company company) {
+    public void saveCompany(Company company) {
         mapper.save(company);
-        return company;
+    }
+
+    public void deleteCompany(Company company) {
+        mapper.delete(company);
     }
 }

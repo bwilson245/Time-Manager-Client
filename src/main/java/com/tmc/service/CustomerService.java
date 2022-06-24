@@ -3,6 +3,7 @@ package com.tmc.service;
 import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.google.common.cache.LoadingCache;
+import com.tmc.controller.Controller;
 import com.tmc.dependency.DaggerServiceComponent;
 import com.tmc.dependency.ServiceComponent;
 import com.tmc.model.*;
@@ -15,6 +16,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.security.InvalidParameterException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
 @Singleton
@@ -36,6 +38,11 @@ public class CustomerService {
         this.companyCache = cacheManager.getCompanyCache();
     }
 
+    /**
+     * Returns a customer from the provided id.
+     * @param id - The id of the desired customer.
+     * @return - returns a customer object
+     */
     public Customer get(String id) {
         if (id == null) {
             throw new InvalidParameterException("Missing ID.");
@@ -43,6 +50,13 @@ public class CustomerService {
         return customerCache.getUnchecked(id);
     }
 
+    /**
+     * Retrieves a list of customers from a list of customerIds.
+     * This method checks the cache to see if it exists. If not, it will add the id to a list of notCached ids.
+     * The dao then uses a batch load to retrieve all the uncached customers and they are added to the cached list.
+     * @param ids - The list of customerIds desired.
+     * @return - Returns a list of customer objects.
+     */
     public List<Customer> get(List<String> ids) {
         if (ids == null) {
             throw new InvalidParameterException("Missing ID.");
@@ -64,15 +78,33 @@ public class CustomerService {
         return cached;
     }
 
-
-    public QueryResultPage<Customer> search(String id, String name, Location location, Boolean isActive, Map<String, AttributeValue> startKey, Integer limit) {
+    /**
+     * Searches a company for its customers based on optional parameters. The only required parameter is the id of the company.
+     * @param id - The companyId associated with company containing the customers.
+     * @param name - The name of the customer.
+     * @param location - The location of the customer.
+     * @param isActive - The active state of the customer.
+     * @param startKey - The lastEvaluatedKey from a previous search.
+     * @param limit - The maximum number of results to retrieve. default is 10.
+     * @return - returns a QueryResultPage containing a list of Customers and if available, a lastEvaluatedKey
+     */
+    public QueryResultPage<Customer> search(String id, SearchCustomerRequest request) {
         if (id == null) {
             throw new InvalidParameterException("Missing ID.");
         }
-        return dao.searchCustomers(id, name, location, isActive, startKey, limit);
+        return dao.searchCustomers(id, request);
     }
 
-
+    /**
+     * Creates a new customer object to be stored in the database.
+     * The only required information is the companyId that is associated with this customer.
+     * Generates a new id and any null fields are set to default values.
+     * default string = *
+     * default boolean = false
+     * default list = new ArrayList()
+     * @param request - The customer object desired to be created.
+     * @return - returns the newly created customer object.
+     */
     public Customer create(Customer request) {
         if (request.getCompanyId() == null) {
             throw new InvalidParameterException("Missing ID.");
@@ -90,7 +122,13 @@ public class CustomerService {
         return customer;
     }
 
-
+    /**
+     * Edits a customer to reflect the information passed into the request and saves it to the database.
+     * Any null values will reflect the original customers information.
+     * The only required value inside the request is the original customerId.
+     * @param request - A customer object containing a valid customerId and the fields desired to be changed.
+     * @return - returns A new customer Object.
+     */
     public Customer edit(Customer request) {
         if (request.getId() == null) {
             throw new InvalidParameterException("Missing ID.");
@@ -102,9 +140,42 @@ public class CustomerService {
         return customer;
     }
 
-
+    /**
+     * Removes a customer from the database.
+     * Removes the customers ID from the company list of customerIds.
+     * Removes the customers ID from the employees list of customerIds for every employee associated with this customer.
+     * Appends "REMOVED." to the front of the customerId in all timesheets associated with this customer.
+     * @param id - The id of the customer to be removed.
+     */
     public void deleteCustomer(String id) {
         Customer customer = customerCache.getUnchecked(id);
+        Company company = companyCache.getUnchecked(customer.getCompanyId());
+
+
+        //************* remove customerId from employees customerIds ***********************//
+        List<Employee> employees = customer.getEmployeeIds().stream().map(employeeCache::getUnchecked).collect(Collectors.toList());
+        employees.forEach(e -> {
+            List<String> customerIds = e.getCustomerIds();
+            customerIds.remove(id);
+            e.setCustomerIds(customerIds);
+        });
+
+
+        //************* remove customerId from company customerIds ***********************//
+        List<String> customerIds = company.getCustomerIds();
+        customerIds.remove(id);
+        company.setCustomerIds(customerIds);
+
+
+        //************* remove customerId from timesheets customerIds ***********************//
+        List<Timesheet> timesheets = customer.getTimesheetIds().stream().map(timesheetCache::getUnchecked).collect(Collectors.toList());
+        timesheets.forEach(t -> t.setCustomerId("REMOVED." + t.getCustomerId()));
+
+
+        //************* save information ***********************//
+        dao.batchSaveTimesheets(timesheets);
+        dao.saveCompany(company);
+        dao.batchSaveEmployees(employees);
         dao.deleteCustomer(customer);
     }
 
@@ -118,8 +189,7 @@ public class CustomerService {
         int numCustomers = 1;
         for (int i = 0; i < numCustomers; i++) {
             Customer customer = Customer.builder()
-                    .companyId("75b1a9c7-6887-4b75-8c2c-7a7219962f62")
-                    .id(UUID.randomUUID().toString())
+                    .companyId("company.a3c3ade2-a99d-40ce-b6bf-d59aee06c279")
                     .name("Customer " + i)
                     .location(Location.builder()
                             .address1("test address")
@@ -132,7 +202,7 @@ public class CustomerService {
                     .type(Const.CUSTOMER)
                     .isActive(true)
                     .build();
-            create(customer);
+            create(new Customer(customer));
             Thread.sleep(1000);
         }
     }
