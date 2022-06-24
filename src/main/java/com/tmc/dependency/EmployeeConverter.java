@@ -1,12 +1,10 @@
 package com.tmc.dependency;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tmc.model.instance.EmployeeInstance;
+import com.tmc.model.EmployeeInstance;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,7 +1,6 @@
 package com.tmc.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.google.googlejavaformat.Op;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,48 +15,47 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@DynamoDBTable(tableName = "Time-Manager")
+@DynamoDBTable(tableName = Const.PRIMARY_TABLE)
 public class Company {
 
-    @DynamoDBHashKey(attributeName = "id")
+    @DynamoDBHashKey(attributeName = "_id")
     private String id;
 
-    @DynamoDBAttribute(attributeName = "name")
+    @DynamoDBAttribute(attributeName = "_name")
     private String name;
 
-    @DynamoDBAttribute(attributeName = "location")
+    @DynamoDBAttribute(attributeName = "_location")
     private Location location;
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "customerIds")
+    @DynamoDBAttribute(attributeName = "_customerIds")
     private List<String> customerIds = new ArrayList<>();
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "employeeIds")
+    @DynamoDBAttribute(attributeName = "_employeeIds")
     private List<String> employeeIds = new ArrayList<>();
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "timesheetIds")
+    @DynamoDBAttribute(attributeName = "_timesheetIds")
     private List<String> timesheetIds = new ArrayList<>();
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "isActive")
+    @DynamoDBAttribute(attributeName = "_isActive")
     private Boolean isActive = true;
 
     @Builder.Default
-    @DynamoDBTypeConvertedEnum
-    @DynamoDBAttribute(attributeName = "type")
-    private TypeEnum type = TypeEnum.COMPANY;
+    @DynamoDBAttribute(attributeName = "_type")
+    private String type = Const.COMPANY;
 
     public Company(Company request) {
-        this.id = Optional.ofNullable(request.getId()).orElse(UUID.randomUUID().toString());
+        this.id = "company." + UUID.randomUUID();
         this.name = Optional.ofNullable(request.getName()).orElse("").toUpperCase();
         this.location = new Location(request.getLocation());
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(new ArrayList<>());
         this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(new ArrayList<>());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(new ArrayList<>());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(false);
-        this.type = TypeEnum.COMPANY;
+        this.type = Const.COMPANY;
     }
 
     public Company(Company request, Company original) {
@@ -68,6 +66,6 @@ public class Company {
         this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(original.getEmployeeIds());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.isActive);
-        this.type = TypeEnum.COMPANY;
+        this.type = Const.COMPANY;
     }
 }

@@ -15,47 +15,44 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@DynamoDBTable(tableName = "Time-Manager")
+@DynamoDBTable(tableName = Const.PRIMARY_TABLE)
 public class Employee {
     public static final String EMAIL_INDEX = "email-index";
 
-    @DynamoDBHashKey(attributeName = "id")
+    @DynamoDBHashKey(attributeName = "_id")
     private String id;
 
-    @DynamoDBIndexHashKey(attributeName = "companyId", globalSecondaryIndexName = "companyId-type-index")
-    @DynamoDBAttribute(attributeName = "companyId")
+    @DynamoDBIndexHashKey(attributeName = "_companyId", globalSecondaryIndexName = Const.COMPANY_ID_INDEX_GSI)
+    @DynamoDBAttribute(attributeName = "_companyId")
     private String companyId;
 
-    @DynamoDBAttribute(attributeName = "name")
+    @DynamoDBAttribute(attributeName = "_name")
     private String name;
 
-    @DynamoDBIndexHashKey(attributeName = "email", globalSecondaryIndexName = EMAIL_INDEX)
-    @DynamoDBAttribute(attributeName = "email")
+    @DynamoDBAttribute(attributeName = "_email")
     private String email;
 
-    @DynamoDBAttribute(attributeName = "password")
+    @DynamoDBAttribute(attributeName = "_password")
     private String password;
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "customerIds")
+    @DynamoDBAttribute(attributeName = "_customerIds")
     private List<String> customerIds = new ArrayList<>();
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "timesheetIds")
+    @DynamoDBAttribute(attributeName = "_timesheetIds")
     private List<String> timesheetIds = new ArrayList<>();
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "isActive")
+    @DynamoDBAttribute(attributeName = "_isActive")
     private Boolean isActive = true;
 
     @Builder.Default
-    @DynamoDBTypeConvertedEnum
-    @DynamoDBIndexRangeKey(attributeName = "type", globalSecondaryIndexNames = {"companyId-type-index"})
-    @DynamoDBAttribute(attributeName = "type")
-    private TypeEnum type = TypeEnum.EMPLOYEE;
+    @DynamoDBAttribute(attributeName = "_type")
+    private String type = Const.EMPLOYEE;
 
     public Employee(Employee request) {
-        this.id = Optional.ofNullable(request.getId()).orElse(UUID.randomUUID().toString());
+        this.id = "employee." + UUID.randomUUID();
         this.companyId = Optional.ofNullable(request.getCompanyId()).orElse("");
         this.name = Optional.ofNullable(request.getName()).orElse("").toUpperCase();
         this.email = Optional.ofNullable(request.getEmail()).orElse("");
@@ -63,7 +60,7 @@ public class Employee {
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(new ArrayList<>());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(new ArrayList<>());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(false);
-        this.type = TypeEnum.EMPLOYEE;
+        this.type = Const.EMPLOYEE;
     }
 
     public Employee(Employee request, Employee original) {
@@ -75,6 +72,6 @@ public class Employee {
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(original.getCustomerIds());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());
         this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.isActive);
-        this.type = TypeEnum.EMPLOYEE;
+        this.type = Const.EMPLOYEE;
     }
 }

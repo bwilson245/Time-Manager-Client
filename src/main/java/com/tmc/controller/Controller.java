@@ -1,20 +1,24 @@
 package com.tmc.controller;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.tmc.dependency.DaggerServiceComponent;
 import com.tmc.dependency.ServiceComponent;
 import com.tmc.model.*;
-import com.tmc.model.request.*;
+
 import lombok.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.inject.Singleton;
 import java.util.*;
 
 @Data
 @RestController
-@RequestMapping("/time-manager")
+@Singleton
 public class Controller {
+
 
     /*
      ********************** HEALTH CHECK ****************
@@ -30,40 +34,41 @@ public class Controller {
     @GetMapping("/timesheet/{id}")
     public ResponseEntity<Timesheet> getTimesheet(@PathVariable String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().getTimesheet(id), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideTimesheetService().get(id), HttpStatus.OK);
     }
 
     @GetMapping("/timesheet")
     public ResponseEntity<List<Timesheet>> getTimesheets(@RequestBody List<String> ids) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().getTimesheets(ids), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideTimesheetService().get(ids), HttpStatus.OK);
     }
 
     @GetMapping("/timesheet/search/{id}")
-    public ResponseEntity<List<Timesheet>> getTimesheetsSearch(@PathVariable String id,
-                                                               @RequestParam (required = false) TypeEnum type,
-                                                               @RequestParam (required = false) String workType,
-                                                               @RequestParam (required = false) Long before,
-                                                               @RequestParam (required = false) Long after,
-                                                               @RequestParam (required = false) String department,
-                                                               @RequestParam (required = false) Boolean complete,
-                                                               @RequestParam (required = false) Boolean validated,
-                                                               @RequestParam (required = false) String orderNum) {
+    public ResponseEntity<QueryResultPage<Timesheet>> getTimesheetsSearch(@PathVariable String id,
+                                                                          @RequestParam(required = false) String workType,
+                                                                          @RequestParam (required = false) Long before,
+                                                                          @RequestParam (required = false) Long after,
+                                                                          @RequestParam (required = false) String department,
+                                                                          @RequestParam (required = false) Boolean complete,
+                                                                          @RequestParam (required = false) Boolean validated,
+                                                                          @RequestParam (required = false) String orderNum,
+                                                                          @MatrixVariable (required = false) Map<String, AttributeValue> startKey,
+                                                                          @RequestParam (required = false) Integer limit) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().searchTimesheets(type, id, workType, department,
-                                                        orderNum, before, after, complete, validated), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideTimesheetService().search(id, workType, department,
+                                                        orderNum, before, after, complete, validated, startKey, limit), HttpStatus.OK);
     }
 
     @PostMapping("/timesheet")
     public ResponseEntity<Timesheet> createTimesheet(@RequestBody Timesheet request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().createTimesheet(request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideTimesheetService().create(request), HttpStatus.OK);
     }
 
     @PutMapping("/timesheet/{id}")
     public ResponseEntity<Timesheet> editTimesheet(@RequestBody Timesheet request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().editTimesheet(request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideTimesheetService().edit(request, dagger.provideEmployeeService()), HttpStatus.OK);
     }
 
     /*
@@ -72,35 +77,36 @@ public class Controller {
     @GetMapping("/employee/{id}")
     public ResponseEntity<Employee> getEmployee(@PathVariable String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().getEmployee(id), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideEmployeeService().get(id), HttpStatus.OK);
     }
 
     @GetMapping("/employee")
     public ResponseEntity<List<Employee>> getEmployees(@RequestBody List<String> ids) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().getEmployees(ids), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideEmployeeService().get(ids), HttpStatus.OK);
     }
 
     @GetMapping("/employee/search/{id}")
-    public ResponseEntity<List<Employee>> getEmployeesSearch(@PathVariable String id,
-                                                             @RequestParam (required = false) TypeEnum type,
+    public ResponseEntity<QueryResultPage<Employee>> getEmployeesSearch(@PathVariable String id,
                                                              @RequestParam (required = false) String name,
                                                              @RequestParam (required = false) String email,
-                                                             @RequestParam (required = false) Boolean isActive) {
+                                                             @RequestParam (required = false) Boolean isActive,
+                                                             @MatrixVariable (required = false) Map<String, AttributeValue> startKey,
+                                                             @RequestParam (required = false) Integer limit) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().searchEmployees(type, id, name, email, isActive), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideEmployeeService().search(id, name, email, isActive, startKey, limit), HttpStatus.OK);
     }
 
     @PostMapping("/employee")
     public ResponseEntity<Employee> createEmployee(@RequestBody Employee request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().createEmployee(request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideEmployeeService().create(request), HttpStatus.OK);
     }
 
     @PutMapping("/employee/{id}")
     public ResponseEntity<Employee> editEmployee(@RequestBody Employee request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().editEmployee(request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideEmployeeService().edit(request), HttpStatus.OK);
     }
 
     /*
@@ -109,25 +115,36 @@ public class Controller {
     @GetMapping("/customer/{id}")
     public ResponseEntity<Customer> getCustomer(@PathVariable String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().getCustomer(id), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCustomerService().get(id), HttpStatus.OK);
     }
 
     @GetMapping("/customer")
     public ResponseEntity<List<Customer>> getCustomers(@RequestBody List<String> ids) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().getCustomers(ids), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCustomerService().get(ids), HttpStatus.OK);
+    }
+
+    @GetMapping("/customer/search/{companyId}")
+    public ResponseEntity<QueryResultPage<Customer>> searchCustomers(@PathVariable String id,
+                                                          @RequestParam (required = false) String name,
+                                                          @RequestParam (required = false) Location location,
+                                                          @RequestParam (required = false) Boolean isActive,
+                                                          @MatrixVariable (required = false) Map<String, AttributeValue> startKey,
+                                                          @RequestParam (required = false) Integer limit) {
+        ServiceComponent dagger = DaggerServiceComponent.create();
+        return new ResponseEntity<>(dagger.provideCustomerService().search(id, name, location, isActive, startKey, limit), HttpStatus.OK);
     }
 
     @PostMapping("/customer")
     public ResponseEntity<Customer> createCustomer(@RequestBody Customer request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().createCustomer(request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCustomerService().create(request), HttpStatus.OK);
     }
 
     @PutMapping("/customer/{id}")
     public ResponseEntity<Customer> editCustomer(@RequestBody Customer request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().editCustomer(request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCustomerService().edit(request), HttpStatus.OK);
     }
 
     /*
@@ -136,18 +153,25 @@ public class Controller {
     @GetMapping("/company/{id}")
     public ResponseEntity<Company> getCompany(@PathVariable String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().getCompany(id), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCompanyService().get(id), HttpStatus.OK);
+    }
+
+    @GetMapping("/company")
+    public ResponseEntity<List<Company>> getCompanies(@RequestBody List<String> ids) {
+        ServiceComponent dagger = DaggerServiceComponent.create();
+        return new ResponseEntity<>(dagger.provideCompanyService().get(ids), HttpStatus.OK);
     }
 
     @PostMapping("/company")
     public ResponseEntity<Company> createCompany(@RequestBody Company request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().createCompany(request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCompanyService().create(request), HttpStatus.OK);
     }
 
     @PutMapping("/company/{id}")
     public ResponseEntity<Company> editCompany(@RequestBody Company request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideServiceManager().editCompany(request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCompanyService().edit(request), HttpStatus.OK);
     }
+
 }

@@ -1,4 +1,4 @@
-package com.tmc.model.request;
+package com.tmc.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class EditEmployeeRequest {
+public class CustomerInstance {
+    private String id;
+    private String companyId;
     private String name;
-    private String email;
-    private String password;
+    private Location location;
+    private String type;
 }

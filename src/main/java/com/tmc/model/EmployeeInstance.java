@@ -1,4 +1,4 @@
-package com.tmc.model.instance;
+package com.tmc.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
 import lombok.AllArgsConstructor;
@@ -10,12 +10,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CustomerInstance {
+@DynamoDBDocument
+public class EmployeeInstance {
+    private String id;
     private String companyId;
     private String name;
-    private String address1;
-    private String address2;
-    private String city;
-    private String state;
-    private String zip;
+    private Double straightTime;
+    private Double overTime;
+    private Double doubleTime;
+    private Double driveTime;
 }

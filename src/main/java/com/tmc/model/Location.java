@@ -1,7 +1,6 @@
 package com.tmc.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
-import com.tmc.model.request.EditTimesheetRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,11 +21,11 @@ public class Location {
     private String zip;
 
     public Location(Location request) {
-        this.address1 = Optional.ofNullable(request.getAddress1()).orElse("").toUpperCase();
-        this.address2 = Optional.ofNullable(request.getAddress2()).orElse("").toUpperCase();
-        this.city = Optional.ofNullable(request.getCity()).orElse("").toUpperCase();
-        this.state = Optional.ofNullable(request.getState()).orElse("").toUpperCase();
-        this.zip = Optional.ofNullable(request.getZip()).orElse("").toUpperCase();
+        this.address1 = Optional.ofNullable(request.getAddress1()).orElse("*").toUpperCase();
+        this.address2 = Optional.ofNullable(request.getAddress2()).orElse("*").toUpperCase();
+        this.city = Optional.ofNullable(request.getCity()).orElse("*").toUpperCase();
+        this.state = Optional.ofNullable(request.getState()).orElse("*").toUpperCase();
+        this.zip = Optional.ofNullable(request.getZip()).orElse("*").toUpperCase();
     }
 
     public Location(Location request, Location original) {

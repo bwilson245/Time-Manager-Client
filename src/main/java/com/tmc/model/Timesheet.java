@@ -1,10 +1,6 @@
 package com.tmc.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.google.googlejavaformat.Op;
-import com.tmc.model.instance.EmployeeInstance;
-import com.tmc.model.request.CreateTimesheetRequest;
-import com.tmc.model.request.EditTimesheetRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,85 +12,82 @@ import java.util.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@DynamoDBTable(tableName = "Time-Manager")
+@DynamoDBTable(tableName = Const.PRIMARY_TABLE)
 public class Timesheet {
 
-    @DynamoDBHashKey(attributeName = "id")
+    @DynamoDBHashKey(attributeName = "_id")
     private String id;
 
-    @DynamoDBIndexHashKey(attributeName = "companyId", globalSecondaryIndexName = "companyId-type-index")
-    @DynamoDBAttribute(attributeName = "companyId")
+    @DynamoDBIndexHashKey(attributeName = "_companyId", globalSecondaryIndexName = Const.COMPANY_ID_INDEX_GSI)
+    @DynamoDBAttribute(attributeName = "_companyId")
     private String companyId;
 
-    @DynamoDBIndexHashKey(attributeName = "customerId", globalSecondaryIndexName = "customerId-type-index")
-    @DynamoDBAttribute(attributeName = "customerId")
+    @DynamoDBAttribute(attributeName = "_customerId")
     private String customerId;
 
-    @DynamoDBAttribute(attributeName = "location")
+    @DynamoDBAttribute(attributeName = "_location")
     private Location location;
 
     @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.M)
-    @DynamoDBAttribute(attributeName = "customer")
+    @DynamoDBAttribute(attributeName = "_customer")
     private Customer customer;
 
     @DynamoDBAttribute(attributeName = "_date")
     private Long date;
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "employeeInstances")
+    @DynamoDBAttribute(attributeName = "_employeeInstances")
     private List<EmployeeInstance> employeeInstances = new ArrayList<>();
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "employeeIds")
+    @DynamoDBAttribute(attributeName = "_employeeIds")
     private List<String> employeeIds = new ArrayList<>();
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "isComplete")
+    @DynamoDBAttribute(attributeName = "_isComplete")
     private Boolean isComplete = false;
 
-    @DynamoDBAttribute(attributeName = "workOrderNumber")
+    @DynamoDBAttribute(attributeName = "_workOrderNumber")
     private String workOrderNumber;
 
-    @DynamoDBAttribute(attributeName = "department")
+    @DynamoDBAttribute(attributeName = "_department")
     private String department;
 
-    @DynamoDBAttribute(attributeName = "description")
+    @DynamoDBAttribute(attributeName = "_description")
     private String description;
 
-    @DynamoDBAttribute(attributeName = "workType")
+    @DynamoDBAttribute(attributeName = "_workType")
     private String workType;
 
     @Builder.Default
-    @DynamoDBAttribute(attributeName = "validated")
+    @DynamoDBAttribute(attributeName = "_validated")
     private Boolean isValidated = false;
 
     @Builder.Default
-    @DynamoDBTypeConvertedEnum
-    @DynamoDBIndexRangeKey(attributeName = "type", globalSecondaryIndexNames = {"companyId-type-index", "customerId-type-index"})
-    @DynamoDBAttribute(attributeName = "type")
-    private TypeEnum type = TypeEnum.TIMESHEET;
+    @DynamoDBAttribute(attributeName = "_type")
+    private String type = Const.TIMESHEET;
 
     public Timesheet(Timesheet request) {
-        //****** Build Location object *******//
-        this.location = new Location(request.getLocation());
+        //****** Build Timesheet object *******//
+        this.location = Optional.ofNullable(request.getLocation()).orElse(new Location());
         this.customer = new Customer(request.getCustomer());
-        this.id = UUID.randomUUID().toString();
+        this.id = "timesheet." + UUID.randomUUID();
         this.companyId = request.getCompanyId();
         this.customerId = Optional.ofNullable(customer.getId()).orElse("");
         this.date = Optional.ofNullable(request.getDate()).orElse(new Date().getTime());
         this.employeeInstances = Optional.ofNullable(request.getEmployeeInstances()).orElse(new ArrayList<>());
         this.employeeIds = Optional.of(request.getEmployeeIds()).orElse(new ArrayList<>());
         this.isComplete = Optional.ofNullable(request.getIsComplete()).orElse(false);
-        this.workOrderNumber = Optional.ofNullable(request.getWorkOrderNumber()).orElse("");
-        this.department = Optional.ofNullable(request.getDepartment()).orElse("");
+        this.workOrderNumber = Optional.ofNullable(request.getWorkOrderNumber()).orElse("").toUpperCase();
+        this.department = Optional.ofNullable(request.getDepartment()).orElse("").toUpperCase();
         this.description = Optional.ofNullable(request.getDescription()).orElse("");
-        this.workType = Optional.ofNullable(request.getWorkType()).orElse("");
+        this.workType = Optional.ofNullable(request.getWorkType()).orElse("").toUpperCase();
         this.isValidated = Optional.ofNullable(request.getIsValidated()).orElse(false);
-        this.type = TypeEnum.TIMESHEET;
+        this.type = Const.TIMESHEET;
     }
 
     public Timesheet(Timesheet request, Timesheet original) {
-        //****** Build Location object *******//
+        //****** Build Timesheet object *******//
         this.location = new Location(request.getLocation(), original.getLocation());
         this.customer = new Customer(request.getCustomer(), original.getCustomer());
         this.id = request.getId();
@@ -109,6 +102,6 @@ public class Timesheet {
         this.description = Optional.ofNullable(request.getDescription()).orElse(original.getDescription());
         this.workType = Optional.ofNullable(request.getWorkType()).orElse(original.getWorkType()).toUpperCase();
         this.isValidated = Optional.ofNullable(request.getIsValidated()).orElse(original.getIsValidated());
-        this.type = TypeEnum.TIMESHEET;
+        this.type = Const.TIMESHEET;
     }
 }
