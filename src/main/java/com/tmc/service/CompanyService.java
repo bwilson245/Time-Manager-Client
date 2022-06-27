@@ -134,6 +134,9 @@ public class CompanyService {
         dao.deleteCompany(company);
     }
 
+
+    // Reserved for creation of new objects for testing
+
     public static void main(String[] args) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         CompanyService service = dagger.provideCompanyService();

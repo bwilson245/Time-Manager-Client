@@ -220,6 +220,10 @@ public class TimesheetService {
         dao.batchSaveEmployees(employees);
     }
 
+
+    // Reserved for creation of new objects for testing
+
+    
     public static void main(String[] args) throws InterruptedException {
         ServiceComponent dagger = DaggerServiceComponent.create();
         TimesheetService service = dagger.provideTimesheetService();

@@ -164,6 +164,9 @@ public class EmployeeService {
         dao.deleteEmployee(employee);
     }
 
+
+    // Reserved for creation of new objects for testing
+
     public static void main(String[] args) throws InterruptedException {
         ServiceComponent dagger = DaggerServiceComponent.create();
         EmployeeService service = dagger.provideEmployeeService();

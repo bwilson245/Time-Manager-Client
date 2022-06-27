@@ -175,6 +175,9 @@ public class CustomerService {
         dao.deleteCustomer(customer);
     }
 
+
+    // Reserved for creation of new objects for testing
+
     public static void main(String[] args) throws InterruptedException {
         ServiceComponent dagger = DaggerServiceComponent.create();
         CustomerService service = dagger.provideCustomerService();
