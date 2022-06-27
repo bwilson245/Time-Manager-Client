@@ -1,12 +1,12 @@
 package com.tmc.service;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.google.common.cache.LoadingCache;
 import com.tmc.dependency.DaggerServiceComponent;
 import com.tmc.dependency.ServiceComponent;
 import com.tmc.model.*;
 import com.tmc.model.EmployeeInstance;
+import com.tmc.model.request.SearchTimesheetRequest;
 import com.tmc.service.dao.DynamoDbDao;
 import com.tmc.service.manager.CacheManager;
 import lombok.Data;
@@ -16,7 +16,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.security.InvalidParameterException;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Data
@@ -70,11 +69,11 @@ public class TimesheetService {
 
 
 
-    public QueryResultPage<Timesheet> search(String id, String workType, String department, String orderNum, Long before, Long after, Boolean complete, Boolean validated, Map<String, AttributeValue> startKey, Integer limit) {
-        if (id == null) {
-            throw new InvalidParameterException("Missing ID.");
+    public QueryResultPage<Timesheet> search(String companyId, SearchTimesheetRequest request) {
+        if (companyId == null) {
+            throw new InvalidParameterException("Missing companyId.");
         }
-        return dao.searchTimesheets(id, workType, department, orderNum, before, after, complete, validated, startKey, limit);
+        return dao.search(companyId, request);
     }
 
 
@@ -234,7 +233,7 @@ public class TimesheetService {
         CompanyService companyService = dagger.provideCompanyService();
         int numTimesheets = 1;
 
-        Company company = companyService.get("company.a3c3ade2-a99d-40ce-b6bf-d59aee06c279");
+        Company company = companyService.get("company.07ae01de-a9df-465c-990c-d28217d89baf");
         List<Employee> employees = employeeService.get(company.getEmployeeIds());
         List<Customer> customers = customerService.get(company.getCustomerIds());
         Random random = new Random();
@@ -278,12 +277,11 @@ public class TimesheetService {
                     .companyId(company.getId())
                     .customerId(customer.getId())
                     .date(randomDate)
-                    .isComplete(false)
+                    .complete(false)
                     .description("test description")
                     .workOrderNumber(String.valueOf(random.nextInt()))
                     .department(department)
                     .workType(workType)
-                    .type(Const.TIMESHEET)
                     .build();
 
             create(new Timesheet(timesheet));

@@ -1,12 +1,11 @@
 package com.tmc.service;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.google.common.cache.LoadingCache;
-import com.tmc.controller.Controller;
 import com.tmc.dependency.DaggerServiceComponent;
 import com.tmc.dependency.ServiceComponent;
 import com.tmc.model.*;
+import com.tmc.model.request.SearchCustomerRequest;
 import com.tmc.service.dao.DynamoDbDao;
 
 import com.tmc.service.manager.CacheManager;
@@ -14,6 +13,7 @@ import lombok.Data;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.lang.reflect.Field;
 import java.security.InvalidParameterException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -80,19 +80,15 @@ public class CustomerService {
 
     /**
      * Searches a company for its customers based on optional parameters. The only required parameter is the id of the company.
-     * @param id - The companyId associated with company containing the customers.
-     * @param name - The name of the customer.
-     * @param location - The location of the customer.
-     * @param isActive - The active state of the customer.
-     * @param startKey - The lastEvaluatedKey from a previous search.
-     * @param limit - The maximum number of results to retrieve. default is 10.
+     * @param companyId - The companyId associated with company containing the customers.
+     * @param request - The SearchCustomerRequest object containing the information.
      * @return - returns a QueryResultPage containing a list of Customers and if available, a lastEvaluatedKey
      */
-    public QueryResultPage<Customer> search(String id, SearchCustomerRequest request) {
-        if (id == null) {
-            throw new InvalidParameterException("Missing ID.");
+    public QueryResultPage<Customer> search(String companyId, SearchCustomerRequest request) {
+        if (companyId == null) {
+            throw new InvalidParameterException("Missing companyId.");
         }
-        return dao.searchCustomers(id, request);
+        return dao.search(companyId, request);
     }
 
     /**
@@ -189,7 +185,7 @@ public class CustomerService {
         int numCustomers = 1;
         for (int i = 0; i < numCustomers; i++) {
             Customer customer = Customer.builder()
-                    .companyId("company.a3c3ade2-a99d-40ce-b6bf-d59aee06c279")
+                    .companyId("company.07ae01de-a9df-465c-990c-d28217d89baf")
                     .name("Customer " + i)
                     .location(Location.builder()
                             .address1("test address")
@@ -199,7 +195,6 @@ public class CustomerService {
                             .build())
                     .timesheetIds(new ArrayList<>())
                     .employeeIds(new ArrayList<>())
-                    .type(Const.CUSTOMER)
                     .isActive(true)
                     .build();
             create(new Customer(customer));

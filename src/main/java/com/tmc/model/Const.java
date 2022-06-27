@@ -9,7 +9,7 @@ public class Const {
     public static final String CUSTOMER = "CUSTOMER";
 
     public static final String PRIMARY_TABLE = "Time-Manager";
-    public static final String COMPANY_ID_ID_INDEX_GSI = "_companyId-id-index";
+    public static final String COMPANY_ID_ID_INDEX_GSI = "_companyId-_id-index";
 
     public static final String CUSTOMER_CACHE = "customerCache";
     public static final String EMPLOYEE_CACHE = "employeeCache";

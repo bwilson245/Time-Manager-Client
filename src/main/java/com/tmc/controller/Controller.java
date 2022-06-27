@@ -6,6 +6,9 @@ import com.tmc.dependency.DaggerServiceComponent;
 import com.tmc.dependency.ServiceComponent;
 import com.tmc.model.*;
 
+import com.tmc.model.request.SearchCustomerRequest;
+import com.tmc.model.request.SearchEmployeeRequest;
+import com.tmc.model.request.SearchTimesheetRequest;
 import lombok.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,18 +48,9 @@ public class Controller {
 
     @GetMapping("/timesheet/search/{id}")
     public ResponseEntity<QueryResultPage<Timesheet>> getTimesheetsSearch(@PathVariable String id,
-                                                                          @RequestParam(required = false) String workType,
-                                                                          @RequestParam (required = false) Long before,
-                                                                          @RequestParam (required = false) Long after,
-                                                                          @RequestParam (required = false) String department,
-                                                                          @RequestParam (required = false) Boolean complete,
-                                                                          @RequestParam (required = false) Boolean validated,
-                                                                          @RequestParam (required = false) String orderNum,
-                                                                          @MatrixVariable (required = false) Map<String, AttributeValue> startKey,
-                                                                          @RequestParam (required = false) Integer limit) {
+                                                                          @RequestBody SearchTimesheetRequest request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideTimesheetService().search(id, workType, department,
-                                                        orderNum, before, after, complete, validated, startKey, limit), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideTimesheetService().search(id, request), HttpStatus.OK);
     }
 
     @PostMapping("/timesheet")
@@ -95,13 +89,9 @@ public class Controller {
 
     @GetMapping("/employee/search/{id}")
     public ResponseEntity<QueryResultPage<Employee>> getEmployeesSearch(@PathVariable String id,
-                                                             @RequestParam (required = false) String name,
-                                                             @RequestParam (required = false) String email,
-                                                             @RequestParam (required = false) Boolean isActive,
-                                                             @MatrixVariable (required = false) Map<String, AttributeValue> startKey,
-                                                             @RequestParam (required = false) Integer limit) {
+                                                                        @RequestBody SearchEmployeeRequest request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideEmployeeService().search(id, name, email, isActive, startKey, limit), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideEmployeeService().search(id, request), HttpStatus.OK);
     }
 
     @PostMapping("/employee")
@@ -191,7 +181,7 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideCompanyService().edit(request), HttpStatus.OK);
     }
 
-    @DeleteMapping("/customer/{id}")
+    @DeleteMapping("/company/{id}")
     public ResponseEntity<Timesheet> deleteCompany(@PathVariable String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         dagger.provideCompanyService().deleteCompany(id);

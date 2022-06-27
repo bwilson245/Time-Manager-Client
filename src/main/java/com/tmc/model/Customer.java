@@ -41,6 +41,7 @@ public class Customer {
     private List<String> employeeIds = new ArrayList<>();
 
     @Builder.Default
+    @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.BOOL)
     @DynamoDBAttribute(attributeName = "_isActive")
     private Boolean isActive = true;
 

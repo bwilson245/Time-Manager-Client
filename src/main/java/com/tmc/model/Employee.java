@@ -44,6 +44,7 @@ public class Employee {
     private List<String> timesheetIds = new ArrayList<>();
 
     @Builder.Default
+    @DynamoDBTyped(DynamoDBMapperFieldModel.DynamoDBAttributeType.BOOL)
     @DynamoDBAttribute(attributeName = "_isActive")
     private Boolean isActive = true;
 
@@ -52,7 +53,7 @@ public class Employee {
         this.id = "employee." + UUID.randomUUID();
         this.companyId = Optional.ofNullable(request.getCompanyId()).orElse("*");
         this.name = Optional.ofNullable(request.getName()).orElse("*").toUpperCase();
-        this.email = Optional.ofNullable(request.getEmail()).orElse("*");
+        this.email = Optional.ofNullable(request.getEmail()).orElse("*").toLowerCase();
         this.password = Optional.ofNullable(request.getPassword()).orElse("*");
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(new ArrayList<>());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(new ArrayList<>());
@@ -63,7 +64,7 @@ public class Employee {
         this.id = Optional.ofNullable(request.getId()).orElse(original.getId());
         this.companyId = Optional.ofNullable(request.getCompanyId()).orElse(original.getCompanyId());
         this.name = Optional.ofNullable(request.getName()).orElse(original.getName()).toUpperCase();
-        this.email = Optional.ofNullable(request.getEmail()).orElse(original.getEmail());
+        this.email = Optional.ofNullable(request.getEmail()).orElse(original.getEmail()).toLowerCase();
         this.password = Optional.ofNullable(request.getPassword()).orElse(original.getPassword());
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(original.getCustomerIds());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());

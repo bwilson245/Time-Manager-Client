@@ -1,4 +1,4 @@
-package com.tmc.dependency;
+package com.tmc.model.converter;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -8,10 +8,10 @@ import com.tmc.model.EmployeeInstance;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EmployeeConverter implements DynamoDBTypeConverter<List<String>, List<EmployeeInstance>> {
+public class EmployeeInstanceConverter implements DynamoDBTypeConverter<List<String>, List<EmployeeInstance>> {
     private ObjectMapper mapper;
 
-    public EmployeeConverter() {
+    public EmployeeInstanceConverter() {
         this.mapper = new ObjectMapper();
     }
 

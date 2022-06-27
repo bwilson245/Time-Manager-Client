@@ -2,7 +2,6 @@ package com.tmc.service.dao;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -11,9 +10,10 @@ import com.tmc.exception.CustomerNotFoundException;
 import com.tmc.exception.EmployeeNotFoundException;
 import com.tmc.exception.TimesheetNotFoundException;
 import com.tmc.model.*;
+import com.tmc.model.request.SearchCustomerRequest;
+import com.tmc.model.request.SearchEmployeeRequest;
+import com.tmc.model.request.SearchTimesheetRequest;
 import lombok.Data;
-import org.checkerframework.checker.units.qual.C;
-import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -65,94 +65,129 @@ public class DynamoDbDao {
         return timesheets;
     }
 
-    public QueryResultPage<Timesheet> searchTimesheets(String id, String workType, String department, String orderNum, Long before,
-                                                    Long after, Boolean complete, Boolean validated,
-                                                    Map<String, AttributeValue> startKey, Integer limit) {
+    public QueryResultPage<Timesheet> search(String companyId, SearchTimesheetRequest request) {
 
-        if (limit == null || limit < 1) {
-            limit = 10;
+        if (request.getLimit() == null || request.getLimit() < 1) {
+            request.setLimit(10);
         }
 
         Map<String, String> nameMap = new HashMap<>();
         Map<String, AttributeValue> valueMap = new HashMap<>();
 
-        String table = "companyId-index";
-        String keyExpression = "#_companyId = :_companyId";
+        nameMap.put("#_companyId", "_companyId");
+        nameMap.put("#_id", "_id");
+        valueMap.put(":_companyId", new AttributeValue().withS(companyId));
+        valueMap.put(":_search", new AttributeValue().withS("timesheet"));
+
+
+        String table = Const.COMPANY_ID_ID_INDEX_GSI;
+        String keyExpression = "#_companyId = :_companyId and begins_with(#_id, :_search)";
         String filterExpression = "";
 
 
-        nameMap.put("#_companyId", "_companyId");
-        valueMap.put(":_companyId", new AttributeValue().withS(id));
 
-
-
-        if (workType != null) {
+        if (request.getWorkType() != null) {
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
             filterExpression = filterExpression.concat("contains(#_workType, :_workType");
             nameMap.put("#_workType", "_workType");
-            valueMap.put(":_workType", new AttributeValue().withS(workType));
+            valueMap.put(":_workType", new AttributeValue().withS(request.getWorkType()));
         }
 
-        if (department != null) {
+        if (request.getDepartment() != null) {
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
             filterExpression = filterExpression.concat("contains(#_department, :_department");
             nameMap.put("#_department", "_department");
-            valueMap.put(":_department", new AttributeValue().withS(department));
+            valueMap.put(":_department", new AttributeValue().withS(request.getDepartment()));
         }
 
-        if (orderNum != null) {
+        if (request.getWorkOrderNumber() != null) {
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
-            filterExpression = filterExpression.concat("contains(#_orderNum, :_orderNum");
-            nameMap.put("#_orderNum", "_orderNum");
-            valueMap.put(":_orderNum", new AttributeValue().withS(orderNum));
+            filterExpression = filterExpression.concat("contains(#_workOrderNumber), :_workOrderNumber");
+            nameMap.put("#_workOrderNumber", "_workOrderNumber");
+            valueMap.put(":_workOrderNumber", new AttributeValue().withS(request.getWorkOrderNumber()));
         }
 
-        if (complete != null) {
+        if (request.getIsComplete() != null) {
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
-            filterExpression = filterExpression.concat("#_complete = :_complete");
-            nameMap.put("#_complete", "_isComplete");
-            valueMap.put(":_complete", new AttributeValue().withBOOL(complete));
+            filterExpression = filterExpression.concat("#_isComplete = :_isComplete");
+            nameMap.put("#_isComplete", "_isComplete");
+            valueMap.put(":_isComplete", new AttributeValue().withBOOL(request.getIsComplete()));
         }
 
-        if (validated != null) {
-            if (filterExpression.length() > 0) {
-                filterExpression = filterExpression.concat(" and ");
+        if (request.getAddress1() != null || request.getAddress2() != null || request.getCity() != null || request.getState() != null || request.getZip() != null) {
+            nameMap.put("#_location", "_location");
+            if (request.getAddress1() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_address1", new AttributeValue().withS(request.getAddress1()));
+                filterExpression = filterExpression.concat("contains(#_location.address1, :_address1");
             }
-            filterExpression = filterExpression.concat("#_validated = :_validated");
-            nameMap.put("#_validated", "_validated");
-            valueMap.put(":_validated", new AttributeValue().withBOOL(validated));
+            if (request.getAddress2() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_address2", new AttributeValue().withS(request.getAddress2()));
+                filterExpression = filterExpression.concat("contains(#_location.address2, :_address2");
+            }
+            if (request.getCity() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_city", new AttributeValue().withS(request.getCity()));
+                filterExpression = filterExpression.concat("contains(#_location.city, :_city");
+            }
+            if (request.getState() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_state", new AttributeValue().withS(request.getState()));
+                filterExpression = filterExpression.concat("contains(#_location.state, :_state");
+            }
+            if (request.getZip() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_zip", new AttributeValue().withS(request.getZip()));
+                filterExpression = filterExpression.concat("contains(#_location.zip, :_zip");
+            }
         }
 
-        if (before != null && after != null) {
+        if (request.getIsValidated() != null) {
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
-            filterExpression = filterExpression.concat("#_date between :_before and :_after");
-            nameMap.put("#_date", "_date");
-            valueMap.put(":_before", new AttributeValue().withN(String.valueOf(before)));
-            valueMap.put(":_after", new AttributeValue().withN(String.valueOf(after)));
-        } else if (before != null) {
+            filterExpression = filterExpression.concat("#_isValidated = :_isValidated");
+            nameMap.put("#_isValidated", "_isValidated");
+            valueMap.put(":_isValidated", new AttributeValue().withBOOL(request.getIsValidated()));
+        }
+
+        if (request.getBefore() != null || request.getAfter() != null) {
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
-            filterExpression = filterExpression.concat("#_date <= :_before");
-            nameMap.put("#_date", "_date");
-            valueMap.put(":_before", new AttributeValue().withN(String.valueOf(before)));
-        } else if (after != null) {
-            if (filterExpression.length() > 0) {
-                filterExpression = filterExpression.concat(" and ");
+            if (request.getBefore() != null && request.getAfter() != null) {
+                nameMap.put("#_date", "_date");
+                valueMap.put(":_before", new AttributeValue().withN(String.valueOf(request.getBefore())));
+                valueMap.put(":_after", new AttributeValue().withN(String.valueOf(request.getAfter())));
+                filterExpression = filterExpression.concat("#_date between :_before and :_after");
+            } else if (request.getBefore() != null) {
+                nameMap.put("#_date", "_date");
+                valueMap.put(":_before", new AttributeValue().withN(String.valueOf(request.getBefore())));
+                filterExpression = filterExpression.concat("#_date <= :_before");
+            } else {
+                nameMap.put("#_date", "_date");
+                valueMap.put(":_after", new AttributeValue().withN(String.valueOf(request.getAfter())));
+                filterExpression = filterExpression.concat("#_date >= :_after");
             }
-            filterExpression = filterExpression.concat("#_date >= :_after");
-            nameMap.put("#_date", "_date");
-            valueMap.put(":_after", new AttributeValue().withN(String.valueOf(after)));
         }
 
         DynamoDBQueryExpression<Timesheet> expression = new DynamoDBQueryExpression<Timesheet>()
@@ -160,14 +195,14 @@ public class DynamoDbDao {
                 .withKeyConditionExpression(keyExpression)
                 .withExpressionAttributeNames(nameMap)
                 .withExpressionAttributeValues(valueMap)
-                .withLimit(limit)
+                .withLimit(request.getLimit())
                 .withConsistentRead(false);
 
         if (filterExpression.length() > 0) {
             expression.setFilterExpression(filterExpression);
         }
-        if (startKey != null) {
-            expression.setExclusiveStartKey(startKey);
+        if (request.getStartKey() != null) {
+            expression.setExclusiveStartKey(request.getStartKey());
         }
 
         QueryResultPage<Timesheet> page = mapper.queryPage(Timesheet.class, expression);
@@ -218,8 +253,7 @@ public class DynamoDbDao {
     }
 
 
-    public QueryResultPage<Customer> searchCustomers(String id, SearchCustomerRequest request) {
-
+    public QueryResultPage<Customer> search(String companyId, SearchCustomerRequest request) {
         if (request.getLimit() == null || request.getLimit() < 1) {
             request.setLimit(10);
         }
@@ -227,47 +261,84 @@ public class DynamoDbDao {
         Map<String, String> nameMap = new HashMap<>();
         Map<String, AttributeValue> valueMap = new HashMap<>();
 
+        nameMap.put("#_companyId", "_companyId");
+        nameMap.put("#_id", "_id");
+        valueMap.put(":_companyId", new AttributeValue().withS(companyId));
+        valueMap.put(":_search", new AttributeValue().withS("customer"));
+
+
         String table = Const.COMPANY_ID_ID_INDEX_GSI;
-        String keyExpression = "#_companyId = :_companyId and #_id begins_with :_id";
+        String keyExpression = "#_companyId = :_companyId and begins_with(#_id, :_search)";
         String filterExpression = "";
 
-
-        nameMap.put("#_companyId", "_companyId");
-        nameMap.put("#_id", "_:id");
-        valueMap.put(":_companyId", new AttributeValue().withS(id));
-        valueMap.put(":_id", new AttributeValue().withS("customer."));
 
         if (request.getName() != null) {
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
-            filterExpression = filterExpression.concat("contains(#_name, :_name");
             nameMap.put("#_name", "_name");
             valueMap.put(":_name", new AttributeValue().withS(request.getName()));
+            filterExpression = filterExpression.concat("contains (#_name, :_name)");
+
         }
 
-
+        if (request.getAddress1() != null || request.getAddress2() != null || request.getCity() != null || request.getState() != null || request.getZip() != null) {
+            nameMap.put("#_location", "_location");
+            if (request.getAddress1() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_address1", new AttributeValue().withS(request.getAddress1()));
+                filterExpression = filterExpression.concat("contains(#_location.address1, :_address1");
+            }
+            if (request.getAddress2() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_address2", new AttributeValue().withS(request.getAddress2()));
+                filterExpression = filterExpression.concat("contains(#_location.address2, :_address2");
+            }
+            if (request.getCity() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_city", new AttributeValue().withS(request.getCity()));
+                filterExpression = filterExpression.concat("contains(#_location.city, :_city");
+            }
+            if (request.getState() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_state", new AttributeValue().withS(request.getState()));
+                filterExpression = filterExpression.concat("contains(#_location.state, :_state");
+            }
+            if (request.getZip() != null) {
+                if (filterExpression.length() > 0) {
+                    filterExpression = filterExpression.concat(" and ");
+                }
+                valueMap.put(":_zip", new AttributeValue().withS(request.getZip()));
+                filterExpression = filterExpression.concat("contains(#_location.zip, :_zip");
+            }
+        }
 
         if (request.getIsActive() != null) {
+            nameMap.put("#_isActive", "_isActive");
+            valueMap.put(":_isActive", new AttributeValue().withBOOL(request.getIsActive()));
             if (filterExpression.length() > 0) {
                 filterExpression = filterExpression.concat(" and ");
             }
             filterExpression = filterExpression.concat("#_isActive = :_isActive");
-            nameMap.put("#_isActive", "_isActive");
-            valueMap.put(":_isActive", new AttributeValue().withBOOL(request.getIsActive()));
         }
 
         DynamoDBQueryExpression<Customer> expression = new DynamoDBQueryExpression<Customer>()
                 .withIndexName(table)
                 .withKeyConditionExpression(keyExpression)
+                .withFilterExpression(filterExpression)
                 .withExpressionAttributeNames(nameMap)
                 .withExpressionAttributeValues(valueMap)
                 .withLimit(request.getLimit())
                 .withConsistentRead(false);
 
-        if (filterExpression.length() > 0) {
-            expression.setFilterExpression(filterExpression);
-        }
         if (request.getStartKey() != null) {
             expression.setExclusiveStartKey(request.getStartKey());
         }
@@ -289,6 +360,7 @@ public class DynamoDbDao {
         }
         return page;
     }
+
 
     public void saveCustomer(Customer customer) {
         mapper.save(customer);
@@ -336,76 +408,92 @@ public class DynamoDbDao {
         return employees;
     }
 
-    public QueryResultPage<Employee> searchEmployees(String id, String name, String email, Boolean isActive, Map<String, AttributeValue> startKey, Integer limit) {
-        if (limit == null || limit < 1) {
-            limit = 10;
+    public QueryResultPage<Employee> search(String companyId, SearchEmployeeRequest request) {
+        if (request.getLimit() == null || request.getLimit() < 1) {
+            request.setLimit(10);
         }
+
+        System.out.println(request);
 
         Map<String, String> nameMap = new HashMap<>();
         Map<String, AttributeValue> valueMap = new HashMap<>();
 
-        String table = Const.COMPANY_ID_ID_INDEX_GSI;
-        String keyExpression = "#_companyId = :_companyId";
-
-
-
         nameMap.put("#_companyId", "_companyId");
-        nameMap.put("#_type", "_type");
-        valueMap.put(":_companyId", new AttributeValue().withS(id));
-        valueMap.put(":_type", new AttributeValue().withS(Const.EMPLOYEE));
-        String filterExpression = "#_type = :_type";
+        nameMap.put("#_id", "_id");
+        valueMap.put(":_companyId", new AttributeValue().withS(companyId));
+        valueMap.put(":_search", new AttributeValue().withS("employee"));
 
-        if (name != null) {
-            filterExpression = filterExpression.concat(" and contains (#_name, :_name)");
+
+        String table = Const.COMPANY_ID_ID_INDEX_GSI;
+        String keyExpression = "#_companyId = :_companyId and begins_with(#_id, :_search)";
+        String filterExpression = "";
+
+
+        if (request.getName() != null) {
+            request.setName(request.getName().toUpperCase());
             nameMap.put("#_name", "_name");
-            valueMap.put(":_name", new AttributeValue().withS(name));
+            valueMap.put(":_name", new AttributeValue().withS(request.getName()));
+            if (filterExpression.length() > 0) {
+                filterExpression = filterExpression.concat(" and ");
+            }
+            filterExpression = filterExpression.concat("contains(#_name, :_name)");
         }
 
-        if (email != null) {
-            filterExpression = filterExpression.concat(" and contains (#_email, :_email)");
+        if (request.getEmail() != null) {
+            request.setEmail(request.getEmail().toLowerCase());
             nameMap.put("#_email", "_email");
-            valueMap.put(":_email", new AttributeValue().withS(email));
+            valueMap.put(":_email", new AttributeValue().withS(request.getEmail()));
+            if (filterExpression.length() > 0) {
+                filterExpression = filterExpression.concat(" and ");
+            }
+            filterExpression = filterExpression.concat("contains(#_email, :_email)");
         }
 
-        if (isActive != null) {
-            filterExpression = filterExpression.concat(" and #_isActive = :_isActive)");
+
+        if (request.getIsActive() != null) {
             nameMap.put("#_isActive", "_isActive");
-            valueMap.put(":_isActive", new AttributeValue().withBOOL(isActive));
+            valueMap.put(":_isActive", new AttributeValue().withBOOL(request.getIsActive()));
+            if (filterExpression.length() > 0) {
+                filterExpression = filterExpression.concat(" and ");
+            }
+            filterExpression = filterExpression.concat("#_isActive = :_isActive");
         }
 
         DynamoDBQueryExpression<Employee> expression = new DynamoDBQueryExpression<Employee>()
                 .withIndexName(table)
                 .withKeyConditionExpression(keyExpression)
-                .withFilterExpression(filterExpression)
                 .withExpressionAttributeNames(nameMap)
                 .withExpressionAttributeValues(valueMap)
-                .withLimit(limit)
+                .withLimit(request.getLimit())
                 .withConsistentRead(false);
 
-        if (startKey.size() != 0) {
-            expression.setExclusiveStartKey(startKey);
+        if (request.getStartKey() != null) {
+            expression.setExclusiveStartKey(request.getStartKey());
+        }
+        if (filterExpression.length() > 0) {
+            expression.setFilterExpression(filterExpression);
         }
 
+        long now = System.currentTimeMillis();
+        System.out.println("Request to database: " + now);
         QueryResultPage<Employee> page = mapper.queryPage(Employee.class, expression);
+
         List<Employee> results = new ArrayList<>(page.getResults());
         int count = page.getCount();
 
-        if (count < limit) {
+        if (count < request.getLimit()) {
 
-            while (count < limit && page.getLastEvaluatedKey() != null) {
-                expression = expression.withLimit(limit - page.getCount());
+            while (count < request.getLimit() && page.getLastEvaluatedKey() != null) {
+                expression = expression.withLimit(request.getLimit() - page.getCount());
                 expression = expression.withExclusiveStartKey(page.getLastEvaluatedKey());
                 page = mapper.queryPage(Employee.class, expression);
                 results.addAll(page.getResults());
                 count += page.getCount();
-                System.out.println(limit);
-                System.out.println(count);
             }
             page.setResults(new ArrayList<>(results));
         }
-
-
-
+        System.out.println("Response from database: " + System.currentTimeMillis());
+        System.out.println("Total time: " + (System.currentTimeMillis() - now));
         return page;
     }
 
@@ -465,4 +553,6 @@ public class DynamoDbDao {
     public void deleteCompany(Company company) {
         mapper.delete(company);
     }
+
+
 }

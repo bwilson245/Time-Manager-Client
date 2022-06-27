@@ -6,6 +6,7 @@ import com.google.common.cache.LoadingCache;
 import com.tmc.dependency.DaggerServiceComponent;
 import com.tmc.dependency.ServiceComponent;
 import com.tmc.model.*;
+import com.tmc.model.request.SearchEmployeeRequest;
 import com.tmc.service.dao.DynamoDbDao;
 import com.tmc.service.manager.CacheManager;
 import lombok.Data;
@@ -85,19 +86,15 @@ public class EmployeeService {
 
     /**
      * Searches a company for its employees based on optional parameters. The only required parameter is the id of the company.
-     * @param id - The companyId associated with company containing the employees.
-     * @param name - The name of the employee.
-     * @param email - The email address of the employee.
-     * @param isActive - The active state of the employee.
-     * @param startKey - The lastEvaluatedKey from a previous search.
-     * @param limit - The maximum number of results to retrieve. default is 10.
+     * @param companyId - The companyId associated with company containing the employees.
+     * @param request - The SearchEmployeeRequest object containing the desired search criteria.
      * @return - returns a QueryResultPage containing a list of employees and if available, a lastEvaluatedKey.
      */
-    public QueryResultPage<Employee> search(String id, String name, String email, Boolean isActive, Map<String, AttributeValue> startKey, Integer limit) {
-        if (id == null) {
-            throw new InvalidParameterException("Missing Company ID.");
+    public QueryResultPage<Employee> search(String companyId, SearchEmployeeRequest request) {
+        if (companyId == null) {
+            throw new InvalidParameterException("Missing companyId.");
         }
-        return dao.searchEmployees(id, name, email, isActive, startKey, limit);
+        return dao.search(companyId, request);
     }
 
 
@@ -174,20 +171,19 @@ public class EmployeeService {
     }
 
     public void generateEmployees() throws InterruptedException {
-        int numEmployees = 3;
+        int numEmployees = 30;
         for (int i = 0; i < numEmployees; i++) {
             Employee employee = Employee.builder()
-                    .companyId("company.a3c3ade2-a99d-40ce-b6bf-d59aee06c279")
+                    .companyId("company.07ae01de-a9df-465c-990c-d28217d89baf")
                     .name("John Doe " + i)
                     .email("testEmail@test.com")
                     .password("testPassword")
                     .customerIds(new ArrayList<>())
                     .timesheetIds(new ArrayList<>())
-                    .type(Const.EMPLOYEE)
                     .isActive(true)
                     .build();
             create(new Employee(employee));
-            Thread.sleep(1000);
+            Thread.sleep(1100);
         }
     }
 
