@@ -42,43 +42,4 @@ public class BuildModule {
     public DynamoDB provideDynamoDb(AmazonDynamoDB client) {
         return new DynamoDB(client);
     }
-
-    @Provides
-    @Singleton
-    public LoadingCache<String, Timesheet> provideTimesheetCache(DynamoDbDao dao) {
-        return CacheBuilder.newBuilder()
-                .expireAfterWrite(1, TimeUnit.DAYS)
-                .maximumSize(1000)
-                .build(CacheLoader.from(dao::getTimesheet));
-    }
-    @Provides
-    @Singleton
-    public LoadingCache<String, Employee> provideEmployeeCache(DynamoDbDao dao) {
-        return CacheBuilder.newBuilder()
-                .expireAfterWrite(1, TimeUnit.DAYS)
-                .maximumSize(1000)
-                .build(CacheLoader.from(dao::getEmployee));
-    }
-    @Provides
-    @Singleton
-    public LoadingCache<String, Customer> provideCustomerCache(DynamoDbDao dao) {
-        return CacheBuilder.newBuilder()
-                .expireAfterWrite(1, TimeUnit.DAYS)
-                .maximumSize(1000)
-                .build(CacheLoader.from(dao::getCustomer));
-    }
-    @Provides
-    @Singleton
-    public LoadingCache<String, Company> provideCompanyCache(DynamoDbDao dao) {
-        return CacheBuilder.newBuilder()
-                .expireAfterWrite(1, TimeUnit.DAYS)
-                .maximumSize(1000)
-                .build(CacheLoader.from(dao::getCompany));
-    }
-
-    @Provides
-    @Singleton
-    public CacheManager provideCacheManager(DynamoDbDao dao, LoadingCache<String, Timesheet> timesheetCache, LoadingCache<String, Customer> customerCache, LoadingCache<String, Employee> employeeCache, LoadingCache<String, Company> companyCache) {
-        return new CacheManager(dao, timesheetCache, customerCache, employeeCache, companyCache);
-    }
 }
