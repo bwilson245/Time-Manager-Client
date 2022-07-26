@@ -8,10 +8,6 @@ import com.tmc.service.dao.DynamoDbDao;
 import com.tmc.service.manager.CacheManager;
 import lombok.Data;
 
-import org.checkerframework.checker.units.qual.C;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Component;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.security.InvalidParameterException;
@@ -74,9 +70,7 @@ public class CompanyService {
             }
         }
         cached.addAll(dao.getCompanies(notCached));
-        for (Company company : cached) {
-            companyCache.put(company.getId(), company);
-        }
+        cached.forEach(company -> companyCache.put(company.getId(),company));
         return cached;
     }
 
@@ -119,7 +113,7 @@ public class CompanyService {
 
     /**
      * Removes a company object AND ALL ASSOCIATED VALUES WITH IT including customers, employees, and timesheets.
-     * NOT REVERSABLE. PEFORM AT YOUR OWN RISK.
+     * NOT REVERSABLE. PERFORM AT YOUR OWN RISK.
      * @param id - The id of the company to be removed.
      */
     public void deleteCompany(String id) {

@@ -45,7 +45,7 @@ public class Company {
     private Boolean isActive = true;
 
     public Company(Company request) {
-        this.id = "company." + UUID.randomUUID();
+        this.id = Const.COMPANY_PREFIX + UUID.randomUUID();
         this.name = Optional.ofNullable(request.getName()).orElse("*").toUpperCase();
         this.location = new Location(request.getLocation());
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(new ArrayList<>());
@@ -55,12 +55,12 @@ public class Company {
     }
 
     public Company(Company request, Company original) {
-        this.id = Optional.ofNullable(request.getId()).orElse(original.getId());
+        this.id = original.getId();
         this.name = Optional.ofNullable(request.getName()).orElse(original.getName()).toUpperCase();
         this.location = new Location(request.getLocation(), original.getLocation());
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(original.getCustomerIds());
         this.employeeIds = Optional.ofNullable(request.getEmployeeIds()).orElse(original.getEmployeeIds());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());
-        this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.isActive);
+        this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.getIsActive());
     }
 }

@@ -9,6 +9,7 @@ import java.util.Map;
 @Data
 @Builder
 public class SearchCustomerRequest {
+    private String companyId;
     private String name;
     private String address1;
     private String address2;

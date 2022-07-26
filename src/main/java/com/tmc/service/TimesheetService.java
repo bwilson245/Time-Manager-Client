@@ -10,11 +10,15 @@ import com.tmc.model.request.SearchTimesheetRequest;
 import com.tmc.service.dao.DynamoDbDao;
 import com.tmc.service.manager.CacheManager;
 import lombok.Data;
-
+import software.amazon.awssdk.core.checksums.Sha256Checksum;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,19 +65,17 @@ public class TimesheetService {
             }
         }
         cached.addAll(dao.getTimesheets(notCached));
-        for (Timesheet timesheet : cached) {
-            timesheetCache.put(timesheet.getId(), timesheet);
-        }
+        cached.forEach(timesheet -> timesheetCache.put(timesheet.getId(), timesheet));
         return cached;
     }
 
 
 
-    public QueryResultPage<Timesheet> search(String companyId, SearchTimesheetRequest request) {
-        if (companyId == null) {
+    public QueryResultPage<Timesheet> search(SearchTimesheetRequest request) {
+        if (request.getCompanyId() == null) {
             throw new InvalidParameterException("Missing companyId.");
         }
-        return dao.search(companyId, request);
+        return dao.search(request);
     }
 
 
@@ -149,7 +151,7 @@ public class TimesheetService {
         //****** Remove this timesheet from removed employees timesheetIds *******//
         removed.forEach(id -> {
             Employee employee = employeeCache.getUnchecked(id);
-            List<String> timesheetIds = employee.getTimesheetIds();
+            Set<String> timesheetIds = new HashSet<>(employee.getTimesheetIds());
             timesheetIds.remove(timesheet.getId());
             employee.setTimesheetIds(new ArrayList<>(timesheetIds));
             dao.saveEmployee(employee);
@@ -171,7 +173,7 @@ public class TimesheetService {
             Customer customer = customerCache.getUnchecked(timesheet.getCustomerId());
 
             //****** If original customer and new customer are different, remove this timesheetId from the original and save *******//
-            if (!timesheet.getCustomerId().equals(originalTimesheet.getCustomerId()) && originalTimesheet.getCustomerId() != null) {
+            if (!timesheet.getCustomerId().equals(originalTimesheet.getCustomerId())) {
                 Customer originalCustomer = customerCache.getUnchecked(originalTimesheet.getCustomerId());
                 originalCustomer.getTimesheetIds().remove(timesheet.getId());
                 originalCustomer.setTimesheetIds(new ArrayList<>(originalCustomer.getTimesheetIds()));
@@ -238,8 +240,8 @@ public class TimesheetService {
         int numTimesheets = 1;
 
         Company company = companyService.get("company.07ae01de-a9df-465c-990c-d28217d89baf");
-        List<Employee> employees = employeeService.get(company.getEmployeeIds());
-        List<Customer> customers = customerService.get(company.getCustomerIds());
+        List<Employee> employees = employeeService.get(new ArrayList<>(company.getEmployeeIds()));
+        List<Customer> customers = customerService.get(new ArrayList<>(company.getCustomerIds()));
         Random random = new Random();
 
         for (int i = 0; i < numTimesheets; i++) {

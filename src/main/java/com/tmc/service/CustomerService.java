@@ -72,23 +72,20 @@ public class CustomerService {
             }
         }
         cached.addAll(dao.getCustomers(notCached));
-        for (Customer customer : cached) {
-            customerCache.put(customer.getId(), customer);
-        }
+        cached.forEach(customer -> customerCache.put(customer.getId(), customer));
         return cached;
     }
 
     /**
      * Searches a company for its customers based on optional parameters. The only required parameter is the id of the company.
-     * @param companyId - The companyId associated with company containing the customers.
      * @param request - The SearchCustomerRequest object containing the information.
      * @return - returns a QueryResultPage containing a list of Customers and if available, a lastEvaluatedKey
      */
-    public QueryResultPage<Customer> search(String companyId, SearchCustomerRequest request) {
-        if (companyId == null) {
+    public QueryResultPage<Customer> search(SearchCustomerRequest request) {
+        if (request.getCompanyId() == null) {
             throw new InvalidParameterException("Missing companyId.");
         }
-        return dao.search(companyId, request);
+        return dao.search(request);
     }
 
     /**

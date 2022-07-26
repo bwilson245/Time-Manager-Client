@@ -86,15 +86,14 @@ public class EmployeeService {
 
     /**
      * Searches a company for its employees based on optional parameters. The only required parameter is the id of the company.
-     * @param companyId - The companyId associated with company containing the employees.
      * @param request - The SearchEmployeeRequest object containing the desired search criteria.
      * @return - returns a QueryResultPage containing a list of employees and if available, a lastEvaluatedKey.
      */
-    public QueryResultPage<Employee> search(String companyId, SearchEmployeeRequest request) {
-        if (companyId == null) {
+    public QueryResultPage<Employee> search(SearchEmployeeRequest request) {
+        if (request.getCompanyId() == null) {
             throw new InvalidParameterException("Missing companyId.");
         }
-        return dao.search(companyId, request);
+        return dao.search(request);
     }
 
 

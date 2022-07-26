@@ -65,7 +65,7 @@ public class DynamoDbDao {
         return timesheets;
     }
 
-    public QueryResultPage<Timesheet> search(String companyId, SearchTimesheetRequest request) {
+    public QueryResultPage<Timesheet> search(SearchTimesheetRequest request) {
 
         if (request.getLimit() == null || request.getLimit() < 1) {
             request.setLimit(10);
@@ -76,7 +76,7 @@ public class DynamoDbDao {
 
         nameMap.put("#_companyId", "_companyId");
         nameMap.put("#_id", "_id");
-        valueMap.put(":_companyId", new AttributeValue().withS(companyId));
+        valueMap.put(":_companyId", new AttributeValue().withS(request.getCompanyId()));
         valueMap.put(":_search", new AttributeValue().withS("timesheet"));
 
 
@@ -253,7 +253,7 @@ public class DynamoDbDao {
     }
 
 
-    public QueryResultPage<Customer> search(String companyId, SearchCustomerRequest request) {
+    public QueryResultPage<Customer> search(SearchCustomerRequest request) {
         if (request.getLimit() == null || request.getLimit() < 1) {
             request.setLimit(10);
         }
@@ -263,7 +263,7 @@ public class DynamoDbDao {
 
         nameMap.put("#_companyId", "_companyId");
         nameMap.put("#_id", "_id");
-        valueMap.put(":_companyId", new AttributeValue().withS(companyId));
+        valueMap.put(":_companyId", new AttributeValue().withS(request.getCompanyId()));
         valueMap.put(":_search", new AttributeValue().withS("customer"));
 
 
@@ -408,7 +408,7 @@ public class DynamoDbDao {
         return employees;
     }
 
-    public QueryResultPage<Employee> search(String companyId, SearchEmployeeRequest request) {
+    public QueryResultPage<Employee> search(SearchEmployeeRequest request) {
         if (request.getLimit() == null || request.getLimit() < 1) {
             request.setLimit(10);
         }
@@ -420,7 +420,7 @@ public class DynamoDbDao {
 
         nameMap.put("#_companyId", "_companyId");
         nameMap.put("#_id", "_id");
-        valueMap.put(":_companyId", new AttributeValue().withS(companyId));
+        valueMap.put(":_companyId", new AttributeValue().withS(request.getCompanyId()));
         valueMap.put(":_search", new AttributeValue().withS("employee"));
 
 

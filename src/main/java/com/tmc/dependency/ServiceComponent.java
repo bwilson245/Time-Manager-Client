@@ -13,10 +13,8 @@ import javax.inject.Singleton;
 @Component (modules = BuildModule.class)
 @Singleton
 public interface ServiceComponent {
-    CacheManager provideCacheManager();
     TimesheetService provideTimesheetService();
     CompanyService provideCompanyService();
     CustomerService provideCustomerService();
     EmployeeService provideEmployeeService();
-    DynamoDbDao provideDynamoDbDao();
 }

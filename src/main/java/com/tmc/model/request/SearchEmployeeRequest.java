@@ -9,6 +9,7 @@ import java.util.Map;
 @Data
 @Builder
 public class SearchEmployeeRequest {
+    private String companyId;
     private String name;
     private String email;
     @Builder.Default

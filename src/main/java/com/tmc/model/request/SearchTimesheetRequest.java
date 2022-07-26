@@ -9,6 +9,7 @@ import java.util.Map;
 @Data
 @Builder
 public class SearchTimesheetRequest {
+    private String companyId;
     private String workType;
     private String department;
     private String workOrderNumber;

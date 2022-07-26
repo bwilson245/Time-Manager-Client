@@ -20,7 +20,6 @@ import dagger.Module;
 import dagger.Provides;
 
 import javax.inject.Singleton;
-import java.util.concurrent.TimeUnit;
 
 @Module
 public class BuildModule {

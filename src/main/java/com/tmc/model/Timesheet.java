@@ -98,7 +98,7 @@ public class Timesheet {
         this.customerName = Optional.ofNullable(request.getCustomerName()).orElse(original.getCustomerName()).toUpperCase();
         this.customerLoc = Optional.ofNullable(request.getCustomerLoc()).orElse(original.getCustomerLoc());
         this.id = request.getId();
-        this.companyId = request.companyId;
+        this.companyId = request.getCompanyId();
         this.customerId = Optional.ofNullable(request.getCustomerId()).orElse(original.getCustomerId());
         this.date = Optional.ofNullable(request.getDate()).orElse(original.getDate());
         this.employeeInstances = Optional.ofNullable(request.getEmployeeInstances()).orElse(original.getEmployeeInstances());

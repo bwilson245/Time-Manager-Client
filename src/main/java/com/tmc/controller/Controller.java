@@ -1,7 +1,6 @@
 package com.tmc.controller;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.tmc.dependency.DaggerServiceComponent;
 import com.tmc.dependency.ServiceComponent;
 import com.tmc.model.*;
@@ -34,23 +33,22 @@ public class Controller {
     /*
      ********************** TIMESHEET ****************
      */
-    @GetMapping("/timesheet/{id}")
-    public ResponseEntity<Timesheet> getTimesheet(@PathVariable String id) {
+    @GetMapping("/timesheet")
+    public ResponseEntity<Timesheet> getTimesheet(@RequestBody String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideTimesheetService().get(id), HttpStatus.OK);
     }
 
-    @GetMapping("/timesheet")
+    @GetMapping("/timesheets")
     public ResponseEntity<List<Timesheet>> getTimesheets(@RequestBody List<String> ids) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideTimesheetService().get(ids), HttpStatus.OK);
     }
 
-    @GetMapping("/timesheet/search/{id}")
-    public ResponseEntity<QueryResultPage<Timesheet>> getTimesheetsSearch(@PathVariable String id,
-                                                                          @RequestBody SearchTimesheetRequest request) {
+    @GetMapping("/timesheets/search")
+    public ResponseEntity<QueryResultPage<Timesheet>> getTimesheetsSearch(@RequestBody SearchTimesheetRequest request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideTimesheetService().search(id, request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideTimesheetService().search(request), HttpStatus.OK);
     }
 
     @PostMapping("/timesheet")
@@ -65,8 +63,8 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideTimesheetService().edit(request, dagger.provideEmployeeService()), HttpStatus.OK);
     }
 
-    @DeleteMapping("/timesheet/{id}")
-    public ResponseEntity<Timesheet> deleteTimesheet(@PathVariable String id) {
+    @DeleteMapping("/timesheet")
+    public ResponseEntity<Timesheet> deleteTimesheet(@RequestBody String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         dagger.provideTimesheetService().deleteTimesheet(id);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -75,23 +73,22 @@ public class Controller {
     /*
      ********************** EMPLOYEE ****************
      */
-    @GetMapping("/employee/{id}")
-    public ResponseEntity<Employee> getEmployee(@PathVariable String id) {
+    @GetMapping("/employee")
+    public ResponseEntity<Employee> getEmployee(@RequestBody String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideEmployeeService().get(id), HttpStatus.OK);
     }
 
-    @GetMapping("/employee")
+    @GetMapping("/employees")
     public ResponseEntity<List<Employee>> getEmployees(@RequestBody List<String> ids) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideEmployeeService().get(ids), HttpStatus.OK);
     }
 
-    @GetMapping("/employee/search/{id}")
-    public ResponseEntity<QueryResultPage<Employee>> getEmployeesSearch(@PathVariable String id,
-                                                                        @RequestBody SearchEmployeeRequest request) {
+    @GetMapping("/employees/search")
+    public ResponseEntity<QueryResultPage<Employee>> getEmployeesSearch(@RequestBody SearchEmployeeRequest request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideEmployeeService().search(id, request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideEmployeeService().search(request), HttpStatus.OK);
     }
 
     @PostMapping("/employee")
@@ -106,8 +103,8 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideEmployeeService().edit(request), HttpStatus.OK);
     }
 
-    @DeleteMapping("/employee/{id}")
-    public ResponseEntity<Employee> deleteEmployee(@PathVariable String id) {
+    @DeleteMapping("/employee")
+    public ResponseEntity<Employee> deleteEmployee(@RequestBody String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         dagger.provideEmployeeService().deleteEmployee(id);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -116,23 +113,22 @@ public class Controller {
     /*
     ********************** CUSTOMER ****************
      */
-    @GetMapping("/customer/{id}")
-    public ResponseEntity<Customer> getCustomer(@PathVariable String id) {
+    @GetMapping("/customer")
+    public ResponseEntity<Customer> getCustomer(@RequestBody String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideCustomerService().get(id), HttpStatus.OK);
     }
 
-    @GetMapping("/customer")
+    @GetMapping("/customers")
     public ResponseEntity<List<Customer>> getCustomers(@RequestBody List<String> ids) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideCustomerService().get(ids), HttpStatus.OK);
     }
 
-    @GetMapping("/customer/search/{companyId}")
-    public ResponseEntity<QueryResultPage<Customer>> searchCustomers(@PathVariable String id,
-                                                                     @RequestBody SearchCustomerRequest request) {
+    @GetMapping("/customers/search")
+    public ResponseEntity<QueryResultPage<Customer>> searchCustomers(@RequestBody SearchCustomerRequest request) {
         ServiceComponent dagger = DaggerServiceComponent.create();
-        return new ResponseEntity<>(dagger.provideCustomerService().search(id, request), HttpStatus.OK);
+        return new ResponseEntity<>(dagger.provideCustomerService().search(request), HttpStatus.OK);
     }
 
     @PostMapping("/customer")
@@ -147,8 +143,8 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideCustomerService().edit(request), HttpStatus.OK);
     }
 
-    @DeleteMapping("/customer/{id}")
-    public ResponseEntity<Timesheet> deleteCustomer(@PathVariable String id) {
+    @DeleteMapping("/customer")
+    public ResponseEntity<Timesheet> deleteCustomer(@RequestBody String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         dagger.provideCustomerService().deleteCustomer(id);
         return new ResponseEntity<>(HttpStatus.OK);
@@ -157,13 +153,14 @@ public class Controller {
     /*
      ********************** COMPANY ****************
      */
-    @GetMapping("/company/{id}")
-    public ResponseEntity<Company> getCompany(@PathVariable String id) {
+    @GetMapping("/company")
+    public ResponseEntity<Company> getCompany(@RequestParam String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
+        System.out.println("ID: " + id);
         return new ResponseEntity<>(dagger.provideCompanyService().get(id), HttpStatus.OK);
     }
 
-    @GetMapping("/company")
+    @GetMapping("/companies")
     public ResponseEntity<List<Company>> getCompanies(@RequestBody List<String> ids) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         return new ResponseEntity<>(dagger.provideCompanyService().get(ids), HttpStatus.OK);
@@ -181,8 +178,8 @@ public class Controller {
         return new ResponseEntity<>(dagger.provideCompanyService().edit(request), HttpStatus.OK);
     }
 
-    @DeleteMapping("/company/{id}")
-    public ResponseEntity<Timesheet> deleteCompany(@PathVariable String id) {
+    @DeleteMapping("/company")
+    public ResponseEntity<Timesheet> deleteCompany(@RequestBody String id) {
         ServiceComponent dagger = DaggerServiceComponent.create();
         dagger.provideCompanyService().deleteCompany(id);
         return new ResponseEntity<>(HttpStatus.OK);

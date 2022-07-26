@@ -68,6 +68,6 @@ public class Employee {
         this.password = Optional.ofNullable(request.getPassword()).orElse(original.getPassword());
         this.customerIds = Optional.ofNullable(request.getCustomerIds()).orElse(original.getCustomerIds());
         this.timesheetIds = Optional.ofNullable(request.getTimesheetIds()).orElse(original.getTimesheetIds());
-        this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.isActive);
+        this.isActive = Optional.ofNullable(request.getIsActive()).orElse(original.getIsActive());
     }
 }
