@@ -116,7 +116,7 @@ public class CompanyService {
      * NOT REVERSABLE. PERFORM AT YOUR OWN RISK.
      * @param id - The id of the company to be removed.
      */
-    public void deleteCompany(String id) {
+    public void delete(String id) {
         Company company = companyCache.getUnchecked(id);
         List<Customer> customers = company.getCustomerIds().stream().map(customerCache::getUnchecked).collect(Collectors.toList());
         List<Employee> employees = company.getEmployeeIds().stream().map(employeeCache::getUnchecked).collect(Collectors.toList());

@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 @Data
 @Singleton
 public class CacheManager {
-    private static CacheManager uniqueInstance;
     private DynamoDbDao dao;
     private LoadingCache<String, Timesheet> timesheetCache;
     private LoadingCache<String, Customer> customerCache;
@@ -26,32 +25,22 @@ public class CacheManager {
 
     @Inject
     public CacheManager(DynamoDbDao dao) {
-        if (uniqueInstance == null) {
-            this.dao = dao;
-            this.timesheetCache = CacheBuilder.newBuilder()
-                    .expireAfterWrite(1, TimeUnit.DAYS)
-                    .maximumSize(1000)
-                    .build(CacheLoader.from(dao::getTimesheet));
-            this.customerCache = CacheBuilder.newBuilder()
-                    .expireAfterWrite(1, TimeUnit.DAYS)
-                    .maximumSize(1000)
-                    .build(CacheLoader.from(dao::getCustomer));;
-            this.employeeCache = CacheBuilder.newBuilder()
-                    .expireAfterWrite(1, TimeUnit.DAYS)
-                    .maximumSize(1000)
-                    .build(CacheLoader.from(dao::getEmployee));
-            this.companyCache = CacheBuilder.newBuilder()
-                    .expireAfterWrite(1, TimeUnit.DAYS)
-                    .maximumSize(1000)
-                    .build(CacheLoader.from(dao::getCompany));
-            uniqueInstance = this;
-        } else {
-            this.dao = uniqueInstance.getDao();
-            this.timesheetCache = uniqueInstance.getTimesheetCache();
-            this.customerCache = uniqueInstance.getCustomerCache();
-            this.employeeCache = uniqueInstance.getEmployeeCache();
-            this.companyCache = uniqueInstance.getCompanyCache();
-        }
-
+        this.dao = dao;
+        this.timesheetCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(1, TimeUnit.DAYS)
+                .maximumSize(1000)
+                .build(CacheLoader.from(dao::getTimesheet));
+        this.customerCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(1, TimeUnit.DAYS)
+                .maximumSize(1000)
+                .build(CacheLoader.from(dao::getCustomer));;
+        this.employeeCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(1, TimeUnit.DAYS)
+                .maximumSize(1000)
+                .build(CacheLoader.from(dao::getEmployee));
+        this.companyCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(1, TimeUnit.DAYS)
+                .maximumSize(1000)
+                .build(CacheLoader.from(dao::getCompany));
     }
 }

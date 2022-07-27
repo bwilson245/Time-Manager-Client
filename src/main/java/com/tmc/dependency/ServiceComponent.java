@@ -4,8 +4,6 @@ import com.tmc.service.CompanyService;
 import com.tmc.service.CustomerService;
 import com.tmc.service.EmployeeService;
 import com.tmc.service.TimesheetService;
-import com.tmc.service.dao.DynamoDbDao;
-import com.tmc.service.manager.CacheManager;
 import dagger.Component;
 
 import javax.inject.Singleton;
